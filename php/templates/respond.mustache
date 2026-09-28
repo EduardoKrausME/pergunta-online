@@ -31,7 +31,53 @@
         </section>
     </div>
 
-    <a class="button ghost" href="{{question_url}}">Voltar à pergunta</a>
+    <section class="panel admin-recent-panel">
+        <div class="panel-head compact">
+            <div>
+                <div class="eyebrow">EVIDÊNCIAS</div>
+                <h2>Referências da resposta</h2>
+            </div>
+        </div>
+
+        {{#has_evidence}}
+        <div class="admin-simple-list">
+            {{#evidence}}
+            <div>
+                <strong>{{title}}</strong>
+                <small>{{type}} · {{created_at}}</small>
+                {{#has_reference}}<span class="admin-evidence-reference">{{reference}}</span>{{/has_reference}}
+                {{#has_file}}<a href="{{download_url}}">{{original_name}}</a>{{/has_file}}
+            </div>
+            {{/evidence}}
+        </div>
+        {{/has_evidence}}
+        {{^has_evidence}}<div class="empty admin-empty-compact">Nenhuma evidência anexada ainda.</div>{{/has_evidence}}
+
+        <form method="post" enctype="multipart/form-data" class="admin-stack-form admin-subsection">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="action" value="add_evidence">
+            <div class="admin-inline-form">
+                <label><span>Tipo</span>
+                    <select name="evidence_type">
+                        <option value="url">URL</option>
+                        <option value="text">Texto</option>
+                        <option value="document">Documento</option>
+                        <option value="image">Imagem</option>
+                        <option value="video">Vídeo</option>
+                    </select>
+                </label>
+                <label><span>Título</span><input name="evidence_title" maxlength="190" required></label>
+            </div>
+            <label><span>URL ou texto</span><textarea name="reference_value" rows="3"></textarea></label>
+            <label><span>Arquivo, quando aplicável · máximo 10 MB</span><input type="file" name="evidence_file"></label>
+            <button class="button ghost small" type="submit">Adicionar evidência</button>
+        </form>
+    </section>
+
+    <div class="admin-card-actions admin-recent-panel">
+        <a class="button ghost" href="{{responses_url}}">← Minhas pautas</a>
+        <a class="button ghost" href="{{question_url}}">Ver pergunta pública</a>
+    </div>
 </section>
 
 {{>partials/site_footer}}
