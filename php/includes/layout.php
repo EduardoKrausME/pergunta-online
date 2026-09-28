@@ -14,15 +14,19 @@ function template_renderer(): MustacheRenderer {
 }
 
 function template_base_context(string $title = APP_NAME, bool $admin = false): array {
-    $user = app_installed() ? current_user() : null;
+    $installed = app_installed();
+    $user = $installed ? current_user() : null;
     $isAdmin = ($user['role'] ?? '') === 'admin';
+    $siteName = $installed ? app_setting('site_name', APP_NAME) : APP_NAME;
     $flashes = array_map(static fn(array $flash): array => [
         'type' => (string)($flash['type'] ?? 'info'),
         'message' => (string)($flash['message'] ?? ''),
     ], consume_flashes());
 
     return [
-        'page_title' => $title === APP_NAME ? APP_NAME : $title . ' · ' . APP_NAME,
+        'page_title' => $title === APP_NAME ? $siteName : $title . ' · ' . $siteName,
+        'site_name' => $siteName,
+        'registration_enabled' => !$installed || app_setting('registration_enabled', '1') === '1',
         'stylesheet_url' => base_url('assets/style.css') . '?v=' . APP_VERSION,
         'home_url' => base_url('index.php'),
         'ask_url' => base_url('ask.php'),
