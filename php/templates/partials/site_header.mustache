@@ -15,7 +15,8 @@
             <a href="{{home_url}}">Explorar</a>
             {{#logged_in}}
                 <a href="{{ask_url}}">Nova pergunta</a>
-                {{#user_is_admin}}<a href="{{admin_url}}">Administração</a>{{/user_is_admin}}
+                {{#user_is_respondent}}<a href="{{responses_url}}">Pautas</a>{{/user_is_respondent}}
+                {{#user_is_admin}}<a href="{{responses_url}}">Pautas</a><a href="{{admin_url}}">Administração</a>{{/user_is_admin}}
                 <span class="user-name">{{user_name}}</span>
                 <a class="button ghost" href="{{logout_url}}">Sair</a>
             {{/logged_in}}
