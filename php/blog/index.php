@@ -80,14 +80,37 @@ if ($slug !== '') {
     $published = (string)($post['published_at'] ?: $post['created_at']);
     $cover = blog_cover_url((string)($post['cover_image_url'] ?? ''));
 
+    $currentTagsStmt = db()->prepare('SELECT tag,tag_slug FROM blog_post_tags WHERE post_id=? ORDER BY tag');
+    $currentTagsStmt->execute([(int)$post['id']]);
+    $currentTags = $currentTagsStmt->fetchAll();
+    $currentTagSlugs = array_column($currentTags, 'tag_slug');
+
+    $sourcesStmt = db()->prepare('SELECT title,url FROM blog_post_sources WHERE post_id=? ORDER BY id');
+    $sourcesStmt->execute([(int)$post['id']]);
+    $sources = $sourcesStmt->fetchAll();
+
     $relatedStmt = db()->prepare(
-        'SELECT id,title,slug,excerpt,content,cover_image_url,published_at,created_at
+        'SELECT id,title,slug,excerpt,content,cover_image_url,cover_image_alt,category,published_at,created_at
            FROM blog_posts
           WHERE id<>? AND published=1 AND (published_at IS NULL OR published_at<=NOW())
        ORDER BY COALESCE(published_at,created_at) DESC,id DESC
-          LIMIT 24'
+          LIMIT 30'
     );
     $relatedStmt->execute([(int)$post['id']]);
+    $relatedRows = $relatedStmt->fetchAll();
+
+    $candidateIds = array_map(static fn(array $row): int => (int)$row['id'], $relatedRows);
+    $candidateTags = [];
+    if ($candidateIds !== []) {
+        $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
+        $tagStmt = db()->prepare(
+            'SELECT post_id,tag_slug FROM blog_post_tags WHERE post_id IN (' . $placeholders . ')'
+        );
+        $tagStmt->execute($candidateIds);
+        foreach ($tagStmt->fetchAll() as $row) {
+            $candidateTags[(int)$row['post_id']][] = (string)$row['tag_slug'];
+        }
+    }
 
     $stopWords = ['para','como','mais','menos','sobre','entre','quando','onde','porque','pela','pelo','pelos','pelas','uma','com','sem','que','por','dos','das','nas','nos','aos','de'];
     $sourceTitle = function_exists('mb_strtolower')
@@ -99,19 +122,34 @@ if ($slug !== '') {
         static fn(string $word): bool => strlen($word) >= 4 && !in_array($word, $stopWords, true)
     )));
 
-    $relatedRows = [];
-    foreach ($relatedStmt->fetchAll() as $candidate) {
+    $currentCategory = trim((string)($post['category'] ?? ''));
+    foreach ($relatedRows as &$candidate) {
+        $score = 0;
+
+        if (
+            $currentCategory !== '' &&
+            strcasecmp($currentCategory, trim((string)($candidate['category'] ?? ''))) === 0
+        ) {
+            $score += 4;
+        }
+
+        $sharedTags = array_intersect(
+            $currentTagSlugs,
+            $candidateTags[(int)$candidate['id']] ?? []
+        );
+        $score += count($sharedTags) * 6;
+
         $text = (string)$candidate['title'] . ' ' . (string)($candidate['excerpt'] ?? '');
         $text = function_exists('mb_strtolower') ? mb_strtolower($text, 'UTF-8') : strtolower($text);
-        $score = 0;
         foreach ($keywords as $keyword) {
             if (str_contains($text, $keyword)) {
                 $score++;
             }
         }
+
         $candidate['_score'] = $score;
-        $relatedRows[] = $candidate;
     }
+    unset($candidate);
 
     usort($relatedRows, static function(array $a, array $b): int {
         $byScore = ((int)$b['_score']) <=> ((int)$a['_score']);
@@ -132,7 +170,18 @@ if ($slug !== '') {
             'url' => base_url('blog/' . rawurlencode((string)$candidate['slug'])),
             'published_date' => blog_format_date($candidateDate),
             'cover_image_url' => blog_cover_url((string)($candidate['cover_image_url'] ?? '')),
+            'cover_image_alt' => trim((string)($candidate['cover_image_alt'] ?? '')) ?: (string)$candidate['title'],
         ];
+    }
+
+    $metaTitle = trim((string)($post['meta_title'] ?? ''));
+    $metaDescription = trim((string)($post['meta_description'] ?? ''));
+    if ($metaDescription === '') {
+        $metaDescription = blog_excerpt($post, 160);
+    }
+    $canonicalUrl = trim((string)($post['canonical_url'] ?? ''));
+    if ($canonicalUrl === '') {
+        $canonicalUrl = base_url('blog/' . rawurlencode((string)$post['slug']));
     }
 
     render_page('blog/post', [
@@ -144,10 +193,20 @@ if ($slug !== '') {
         'author_name' => trim((string)($post['author_name'] ?? '')),
         'has_author' => trim((string)($post['author_name'] ?? '')) !== '',
         'cover_image_url' => $cover,
-        'has_cover' => $cover !== '',
+        'cover_image_alt' => trim((string)($post['cover_image_alt'] ?? '')) ?: (string)$post['title'],
+        'cover_image_credit' => trim((string)($post['cover_image_credit'] ?? '')),
+        'has_image_credit' => trim((string)($post['cover_image_credit'] ?? '')) !== '',
+        'category' => trim((string)($post['category'] ?? '')),
+        'has_category' => trim((string)($post['category'] ?? '')) !== '',
+        'tags' => $currentTags,
+        'has_tags' => $currentTags !== [],
+        'sources' => $sources,
+        'has_sources' => $sources !== [],
+        'meta_description' => $metaDescription,
+        'canonical_url' => $canonicalUrl,
         'related_posts' => $relatedContext,
         'has_related_posts' => $relatedContext !== [],
-    ], (string)$post['title']);
+    ] + ($metaTitle !== '' ? ['page_title' => $metaTitle] : []), (string)$post['title']);
     exit;
 }
 
