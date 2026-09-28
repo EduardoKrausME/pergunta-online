@@ -14,8 +14,8 @@ if (current_user()) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $email = normalize_email((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
+    $email = normalize_email((string)Request::post('email', Request::STRING, ''));
+    $password = (string)Request::post('password', Request::STRING, '');
     $ip = client_ip();
     $rate = db()->prepare("SELECT COUNT(*) FROM login_attempts WHERE email = ? AND ip_address = ? AND success = 0 AND created_at >= (NOW() - INTERVAL 15 MINUTE)");
     $rate->execute([$email, $ip]);
