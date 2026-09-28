@@ -14,11 +14,20 @@
 
 <div class="admin-stats-grid">
 {{#stats}}
+    {{#url}}
+    <a class="admin-stat-card admin-stat-card-link" href="{{url}}">
+        <strong>{{value}}</strong>
+        <span>{{label}}</span>
+        <small>{{hint}}</small>
+    </a>
+    {{/url}}
+    {{^url}}
     <div class="admin-stat-card">
         <strong>{{value}}</strong>
         <span>{{label}}</span>
         <small>{{hint}}</small>
     </div>
+    {{/url}}
 {{/stats}}
 </div>
 
