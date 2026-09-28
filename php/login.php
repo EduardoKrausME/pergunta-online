@@ -25,10 +25,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = db()->prepare('SELECT id, password_hash, active FROM users WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
-        $ok = $user && (int)$user['active'] === 1 && password_verify($password, $user['password_hash']);
+
+        $passwordValid = false;
+        $plainTextPassword = false;
+        if ($user) {
+            $storedPassword = (string)$user['password_hash'];
+            $passwordValid = password_verify($password, $storedPassword);
+
+            if (!$passwordValid) {
+                $passwordInfo = password_get_info($storedPassword);
+                $isPasswordHash = ($passwordInfo['algoName'] ?? 'unknown') !== 'unknown';
+
+                if (!$isPasswordHash && hash_equals($storedPassword, $password)) {
+                    $passwordValid = true;
+                    $plainTextPassword = true;
+                }
+            }
+        }
+
+        $ok = $user && (int)$user['active'] === 1 && $passwordValid;
         $log = db()->prepare('INSERT INTO login_attempts (email, ip_address, success) VALUES (?, ?, ?)');
         $log->execute([$email, $ip, $ok ? 1 : 0]);
         if ($ok) {
+            if ($plainTextPassword) {
+                $newPasswordHash = password_hash($password, PASSWORD_DEFAULT);
+                if ($newPasswordHash !== false) {
+                    $updatePassword = db()->prepare(
+                        'UPDATE users SET password_hash=? WHERE id=? AND password_hash=?'
+                    );
+                    $updatePassword->execute([$newPasswordHash, (int)$user['id'], $storedPassword]);
+                }
+            }
+
             session_regenerate_id(true);
             $_SESSION['user_id'] = (int)$user['id'];
             $lastLogin = db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?');
