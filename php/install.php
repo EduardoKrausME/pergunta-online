@@ -28,16 +28,16 @@ if ($error === '') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && !$hasAdmin) {
     require_csrf();
-    $name = trim((string)($_POST['name'] ?? ''));
-    $email = normalize_email((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
+    $name = trim((string)Request::post('name', Request::STRING, ''));
+    $email = normalize_email((string)Request::post('email', Request::STRING, ''));
+    $password = (string)Request::post('password', Request::STRING, '');
     if (strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 10) {
         $error = 'Informe nome, e-mail válido e uma senha com pelo menos 10 caracteres.';
     } else {
         $stmt = db()->prepare("INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')");
         $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
         $adminId = (int)db()->lastInsertId();
-        if (!empty($_POST['seed_demo'])) {
+        if (Request::post('seed_demo', Request::BOOL, false)) {
             $samples = [
                 ['Vasco da Gama', 'VG', 'Contratações', 'Qual era o orçamento aprovado para contratações nesta temporada?', 'A comunidade quer entender como o planejamento financeiro se conecta às decisões do futebol. Qual foi o valor aprovado, quanto já foi utilizado e onde podemos consultar esses números?', 'Diretoria de futebol', 'taken', null],
                 ['Corinthians', 'SCCP', 'Gestão', 'Quando o clube vai publicar o detalhamento das dívidas de curto prazo?', 'Há uma data prevista para a publicação de um relatório acessível ao torcedor, com valores, vencimentos e estratégia de pagamento?', 'Diretoria financeira', 'waiting', date('Y-m-d H:i:s', time() - 47 * 86400)],
