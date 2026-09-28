@@ -162,4 +162,29 @@ body.admin-layout{
         border-radius:3px 3px 0 0;
     }
 }
+.admin-layout .admin-bar a{
+    gap:10px;
+}
+.admin-menu-count{
+    margin-left:auto;
+    min-width:24px;
+    padding:3px 7px;
+    border-radius:999px;
+    background:rgba(255,255,255,.08);
+    color:#aaa69d;
+    font-size:10px;
+    font-weight:950;
+    line-height:1.4;
+    text-align:center;
+}
+.admin-layout .admin-bar a:hover .admin-menu-count,
+.admin-layout .admin-bar a.active .admin-menu-count{
+    background:rgba(255,255,255,.16);
+    color:#fff;
+}
+@media(max-width:900px){
+    .admin-menu-count{
+        margin-left:2px;
+    }
+}
 
