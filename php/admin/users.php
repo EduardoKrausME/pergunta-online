@@ -8,9 +8,9 @@ if (!app_installed()) {
 }
 $admin = require_admin();
 
-$q = trim((string)($_GET['q'] ?? ''));
-$roleFilter = (string)($_GET['role'] ?? '');
-$stateFilter = (string)($_GET['state'] ?? '');
+$q = trim((string)Request::get('q', Request::STRING, ''));
+$roleFilter = (string)Request::get('role', Request::STRING, '');
+$stateFilter = (string)Request::get('state', Request::STRING, '');
 
 if (!in_array($roleFilter, ['', 'user', 'admin'], true)) {
     $roleFilter = '';
@@ -27,8 +27,8 @@ $returnQuery = http_build_query(array_filter([
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $id = (int)($_POST['user_id'] ?? 0);
-    $action = (string)($_POST['action'] ?? '');
+    $id = (int)Request::post('user_id', Request::INT, 0);
+    $action = (string)Request::post('action', Request::STRING, '');
 
     if ($id === (int)$admin['id']) {
         flash('warning', 'Você não pode desativar ou remover seu próprio acesso administrativo aqui.');
