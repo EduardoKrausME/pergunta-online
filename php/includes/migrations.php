@@ -23,10 +23,7 @@ function run_schema_migrations(PDO $pdo): void {
 
     $stmt = $pdo->query("SELECT meta_value FROM app_meta WHERE meta_key='schema_version' LIMIT 1");
     $version = (int)($stmt->fetchColumn() ?: 0);
-    if ($version >= 1) {
-        return;
-    }
-
+    if ($version < 1) {
     migration_add_column($pdo, 'users', 'last_login_at', 'DATETIME NULL AFTER active');
     $pdo->exec("ALTER TABLE users MODIFY role ENUM('user','respondent','admin') NOT NULL DEFAULT 'user'");
 
@@ -177,6 +174,32 @@ function run_schema_migrations(PDO $pdo): void {
         ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value)
     ");
     $upsert->execute();
+    $version = 1;
+    }
+
+    if ($version < 2) {
+        $pdo->exec("INSERT IGNORE INTO focuses (name,abbr)
+            SELECT focus_name, MAX(focus_abbr) FROM questions
+            WHERE focus_name <> '' GROUP BY focus_name");
+        $pdo->exec("INSERT IGNORE INTO categories (name)
+            SELECT DISTINCT category FROM questions WHERE category <> ''");
+        $pdo->exec("INSERT IGNORE INTO targets (name)
+            SELECT DISTINCT target_name FROM questions WHERE target_name <> ''");
+        $pdo->exec("UPDATE questions q JOIN focuses f ON f.name=q.focus_name SET q.focus_id=f.id WHERE q.focus_id IS NULL");
+        $pdo->exec("UPDATE questions q JOIN categories c ON c.name=q.category SET q.category_id=c.id WHERE q.category_id IS NULL");
+        $pdo->exec("UPDATE questions q JOIN targets t ON t.name=q.target_name SET q.target_id=t.id WHERE q.target_id IS NULL");
+        $pdo->exec("
+            INSERT INTO question_history (question_id,actor_user_id,event_type,old_status,new_status,details,created_at)
+            SELECT q.id,q.user_id,'created',NULL,q.status,'Histórico anterior à implantação da linha do tempo.',q.created_at
+            FROM questions q
+            WHERE NOT EXISTS (SELECT 1 FROM question_history h WHERE h.question_id=q.id)
+        ");
+        $upsert = $pdo->prepare("
+            INSERT INTO app_meta (meta_key,meta_value) VALUES ('schema_version','2')
+            ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value)
+        ");
+        $upsert->execute();
+    }
 }
 
 function migration_add_column(PDO $pdo, string $table, string $column, string $definition): void {
