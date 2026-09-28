@@ -8,7 +8,7 @@ if (!app_installed()) {
     redirect('install.php');
 }
 if (current_user()) {
-    redirect('index.php');
+    redirect('/');
 }
 
 $error = '';
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = (int)$user['id'];
             $lastLogin = db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?');
             $lastLogin->execute([(int)$user['id']]);
-            redirect('index.php');
+            redirect('/');
         }
         $error = 'E-mail ou senha inválidos.';
     }
