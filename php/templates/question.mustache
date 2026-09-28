@@ -16,6 +16,8 @@
     </div>
     {{/is_duplicate}}
 
+    {{#has_taken_by}}<div class="question-taken-by">Pauta assumida por <strong>{{taken_by_name}}</strong>{{#taken_at}} em {{taken_at}}{{/taken_at}}</div>{{/has_taken_by}}
+
     <div class="detail-stats">
         <strong>{{vote_count}}</strong><span>endossos “Boa!”</span>
         {{#show_silence}}<strong>{{silence_days}}</strong><span>dias de silêncio registrados</span>{{/show_silence}}
