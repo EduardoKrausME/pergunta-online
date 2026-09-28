@@ -14,10 +14,11 @@ $viewerId = (int)($viewer['id'] ?? 0);
 $isAdmin = (int)(($viewer['role'] ?? '') === 'admin');
 
 $stmt = db()->prepare("
-    SELECT q.*,u.name author_name,dq.title duplicate_title
+    SELECT q.*,u.name author_name,dq.title duplicate_title,taker.name taken_by_name
     FROM questions q
     JOIN users u ON u.id=q.user_id
     LEFT JOIN questions dq ON dq.id=q.duplicate_of
+    LEFT JOIN users taker ON taker.id=q.taken_by
     WHERE q.id=? AND q.deleted_at IS NULL
       AND (q.published=1 OR q.user_id=? OR ?=1)
     LIMIT 1
@@ -103,6 +104,9 @@ render_page('question', [
     'author_name' => (string)$question['author_name'],
     'target_name' => (string)$question['target_name'],
     'created_at' => date('d/m/Y H:i', strtotime((string)$question['created_at'])),
+    'has_taken_by' => !empty($question['taken_by_name']),
+    'taken_by_name' => (string)($question['taken_by_name'] ?? ''),
+    'taken_at' => !empty($question['taken_at']) ? date('d/m/Y H:i', strtotime((string)$question['taken_at'])) : '',
     'vote_count' => (int)db()->query('SELECT COUNT(*) FROM question_votes WHERE question_id=' . (int)$id)->fetchColumn(),
     'show_silence' => $showSilence,
     'silence_days' => $silenceDays,
