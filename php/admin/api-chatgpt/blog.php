@@ -7,11 +7,101 @@ require_once __DIR__ . '/common.php';
 api_method(['POST']);
 $actor = api_require_auth();
 
+function api_blog_http_url(mixed $value, string $field, int $max = 1000): string {
+    $url = api_string($value, $field, 0, $max);
+    if ($url === '') {
+        return '';
+    }
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        throw new InvalidArgumentException("O campo {$field} precisa ser uma URL válida.");
+    }
+    $scheme = strtolower((string)(parse_url($url, PHP_URL_SCHEME) ?? ''));
+    if (!in_array($scheme, ['http', 'https'], true)) {
+        throw new InvalidArgumentException("O campo {$field} aceita apenas HTTP ou HTTPS.");
+    }
+    return $url;
+}
+
+function api_blog_datetime(mixed $value): ?string {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    try {
+        $date = new DateTimeImmutable($value);
+        $timezone = new DateTimeZone(date_default_timezone_get());
+        return $date->setTimezone($timezone)->format('Y-m-d H:i:s');
+    } catch (Throwable $e) {
+        throw new InvalidArgumentException('published_at precisa ser uma data ISO 8601 válida.');
+    }
+}
+
+function api_blog_tags(mixed $value): array {
+    if ($value === null) {
+        return [];
+    }
+    if (!is_array($value) || !array_is_list($value)) {
+        throw new InvalidArgumentException('tags precisa ser uma lista de textos.');
+    }
+    if (count($value) > 20) {
+        throw new InvalidArgumentException('Cada post aceita no máximo 20 tags.');
+    }
+
+    $tags = [];
+    $seen = [];
+    foreach ($value as $item) {
+        $tag = api_string($item, 'tags[]', 2, 120);
+        $slug = blog_slugify($tag);
+        if ($slug === '' || isset($seen[$slug])) {
+            continue;
+        }
+        $seen[$slug] = true;
+        $tags[] = ['tag' => $tag, 'slug' => substr($slug, 0, 120)];
+    }
+    return $tags;
+}
+
+function api_blog_sources(mixed $value): array {
+    if ($value === null) {
+        return [];
+    }
+    if (!is_array($value) || !array_is_list($value)) {
+        throw new InvalidArgumentException('sources precisa ser uma lista de objetos.');
+    }
+    if (count($value) > 20) {
+        throw new InvalidArgumentException('Cada post aceita no máximo 20 fontes.');
+    }
+
+    $sources = [];
+    $seen = [];
+    foreach ($value as $item) {
+        if (!is_array($item) || array_is_list($item)) {
+            throw new InvalidArgumentException('Cada item de sources precisa ser um objeto.');
+        }
+        $url = api_blog_http_url($item['url'] ?? '', 'sources[].url');
+        if ($url === '') {
+            throw new InvalidArgumentException('sources[].url é obrigatório.');
+        }
+        if (isset($seen[$url])) {
+            continue;
+        }
+        $seen[$url] = true;
+        $title = api_string($item['title'] ?? '', 'sources[].title', 0, 255);
+        if ($title === '') {
+            $host = (string)(parse_url($url, PHP_URL_HOST) ?? '');
+            $title = $host !== '' ? $host : 'Fonte';
+        }
+        $sources[] = ['title' => $title, 'url' => $url];
+    }
+    return $sources;
+}
+
 function api_blog_public_ip(string $host): string {
     $host = trim($host, '[]');
     $lower = strtolower($host);
     if ($host === '' || $lower === 'localhost' || str_ends_with($lower, '.local')) {
-        throw new InvalidArgumentException('image_url aponta para um host não permitido.');
+        throw new InvalidArgumentException('A imagem aponta para um host não permitido.');
     }
 
     $ips = [];
@@ -32,7 +122,7 @@ function api_blog_public_ip(string $host): string {
     }
 
     if ($ips === []) {
-        throw new InvalidArgumentException('Não foi possível resolver o host de image_url.');
+        throw new InvalidArgumentException('Não foi possível resolver o host da imagem.');
     }
 
     foreach (array_unique($ips) as $ip) {
@@ -41,35 +131,27 @@ function api_blog_public_ip(string $host): string {
         }
     }
 
-    throw new InvalidArgumentException('image_url não pode apontar para rede privada, local ou reservada.');
+    throw new InvalidArgumentException('A imagem não pode apontar para rede privada, local ou reservada.');
 }
 
 function api_blog_validate_image_url(string $url): array {
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        throw new InvalidArgumentException('image_url precisa ser uma URL válida.');
-    }
-
+    $url = api_blog_http_url($url, 'image.url', 2000);
     $parts = parse_url($url);
     if (!is_array($parts)) {
-        throw new InvalidArgumentException('image_url precisa ser uma URL válida.');
+        throw new InvalidArgumentException('image.url precisa ser uma URL válida.');
+    }
+    if (isset($parts['user']) || isset($parts['pass'])) {
+        throw new InvalidArgumentException('image.url não pode conter usuário ou senha.');
     }
 
     $scheme = strtolower((string)($parts['scheme'] ?? ''));
-    if (!in_array($scheme, ['http', 'https'], true)) {
-        throw new InvalidArgumentException('image_url aceita apenas HTTP ou HTTPS.');
-    }
-    if (isset($parts['user']) || isset($parts['pass'])) {
-        throw new InvalidArgumentException('image_url não pode conter usuário ou senha.');
-    }
-
     $host = strtolower(trim((string)($parts['host'] ?? '')));
-    if ($host === '') {
-        throw new InvalidArgumentException('image_url precisa informar um host.');
-    }
-
     $port = (int)($parts['port'] ?? ($scheme === 'https' ? 443 : 80));
+    if ($host === '') {
+        throw new InvalidArgumentException('image.url precisa informar um host.');
+    }
     if (!in_array($port, [80, 443], true)) {
-        throw new InvalidArgumentException('image_url aceita somente as portas 80 e 443.');
+        throw new InvalidArgumentException('image.url aceita somente as portas 80 e 443.');
     }
 
     return [
@@ -108,9 +190,8 @@ function api_blog_redirect_url(string $base, string $location): string {
 
     $path = (string)($parts['path'] ?? '/');
     $dir = rtrim(str_replace('\\', '/', dirname($path)), '/');
-    $combined = ($dir === '' ? '' : $dir) . '/' . $location;
     $segments = [];
-    foreach (explode('/', $combined) as $segment) {
+    foreach (explode('/', ($dir === '' ? '' : $dir) . '/' . $location) as $segment) {
         if ($segment === '' || $segment === '.') {
             continue;
         }
@@ -124,13 +205,58 @@ function api_blog_redirect_url(string $base, string $location): string {
     return $origin . '/' . implode('/', $segments);
 }
 
-function api_blog_download_image(string $url): string {
+function api_blog_image_input(array $input): array {
+    $provided = array_key_exists('image', $input)
+        || array_key_exists('image_url', $input)
+        || array_key_exists('cover_image_url', $input)
+        || api_bool($input['remove_image'] ?? null, false);
+
+    $image = $input['image'] ?? null;
+    $url = '';
+    $alt = '';
+    $credit = '';
+    $sourceUrl = '';
+
+    if (is_array($image) && !array_is_list($image)) {
+        $url = api_string($image['url'] ?? '', 'image.url', 0, 2000);
+        $alt = api_string($image['alt'] ?? '', 'image.alt', 0, 255);
+        $credit = api_string($image['credit'] ?? '', 'image.credit', 0, 255);
+        $sourceUrl = api_blog_http_url($image['source_url'] ?? '', 'image.source_url');
+    } elseif ($image !== null && !is_array($image)) {
+        $url = api_string($image, 'image', 0, 2000);
+    }
+
+    if ($url === '') {
+        $url = api_string(
+            $input['image_url'] ?? ($input['cover_image_url'] ?? ''),
+            'image_url',
+            0,
+            2000
+        );
+    }
+    if ($url !== '') {
+        $url = api_blog_http_url($url, 'image.url', 2000);
+    }
+    if ($sourceUrl === '' && $url !== '') {
+        $sourceUrl = $url;
+    }
+
+    return [
+        'provided' => $provided,
+        'remove' => api_bool($input['remove_image'] ?? null, false),
+        'url' => $url,
+        'alt' => $alt,
+        'credit' => $credit,
+        'source_url' => $sourceUrl,
+    ];
+}
+
+function api_blog_download_image(string $url, bool $persist): array {
     if (!function_exists('curl_init')) {
-        throw new RuntimeException('A extensão cURL do PHP é necessária para baixar image_url.');
+        throw new RuntimeException('A extensão cURL do PHP é necessária para baixar image.url.');
     }
 
     $current = $url;
-
     for ($redirect = 0; $redirect <= 3; $redirect++) {
         $target = api_blog_validate_image_url($current);
         $tmp = tempnam(sys_get_temp_dir(), 'pergunta-blog-');
@@ -147,7 +273,6 @@ function api_blog_download_image(string $url): string {
         $received = 0;
         $tooLarge = false;
         $location = '';
-
         $ch = curl_init($current);
         if ($ch === false) {
             fclose($fp);
@@ -164,11 +289,9 @@ function api_blog_download_image(string $url): string {
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT => 20,
-            CURLOPT_USERAGENT => 'Pergunta.Online Blog Image Fetcher/1.0',
+            CURLOPT_USERAGENT => 'Pergunta.Online Blog Image Fetcher/1.1',
             CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-            CURLOPT_RESOLVE => [
-                $target['host'] . ':' . $target['port'] . ':' . $resolvedIp,
-            ],
+            CURLOPT_RESOLVE => [$target['host'] . ':' . $target['port'] . ':' . $resolvedIp],
             CURLOPT_HEADERFUNCTION => static function($curl, string $header) use (&$location): int {
                 if (stripos($header, 'Location:') === 0) {
                     $location = trim(substr($header, 9));
@@ -200,7 +323,7 @@ function api_blog_download_image(string $url): string {
         if ($status >= 300 && $status < 400 && $location !== '') {
             @unlink($tmp);
             if ($redirect >= 3) {
-                throw new InvalidArgumentException('image_url excedeu o limite de redirecionamentos.');
+                throw new InvalidArgumentException('A imagem excedeu o limite de redirecionamentos.');
             }
             $current = api_blog_redirect_url($current, $location);
             continue;
@@ -208,129 +331,414 @@ function api_blog_download_image(string $url): string {
 
         if ($ok === false || $status < 200 || $status >= 300 || $received <= 0) {
             @unlink($tmp);
-            throw new InvalidArgumentException('Não foi possível baixar image_url.');
+            throw new InvalidArgumentException('Não foi possível baixar a imagem.');
         }
 
-        try {
-            return blog_store_downloaded_image($tmp, $received);
-        } catch (Throwable $e) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = (string)$finfo->file($tmp);
+        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $dimensions = @getimagesize($tmp);
+        if (!in_array($mime, $allowed, true) || !is_array($dimensions) || empty($dimensions[0]) || empty($dimensions[1])) {
             @unlink($tmp);
-            throw new InvalidArgumentException($e->getMessage(), 0, $e);
+            throw new InvalidArgumentException('O arquivo remoto não é uma imagem JPG, PNG, WEBP ou GIF válida.');
+        }
+
+        $width = (int)$dimensions[0];
+        $height = (int)$dimensions[1];
+        if ($width > 12000 || $height > 12000 || ($width * $height) > 60000000) {
+            @unlink($tmp);
+            throw new InvalidArgumentException('A resolução da imagem é muito grande.');
+        }
+
+        $path = '';
+        if ($persist) {
+            try {
+                $path = blog_store_downloaded_image($tmp, $received);
+            } catch (Throwable $e) {
+                @unlink($tmp);
+                throw new InvalidArgumentException($e->getMessage(), 0, $e);
+            }
+        } else {
+            @unlink($tmp);
+        }
+
+        return [
+            'source_url' => $url,
+            'final_url' => $current,
+            'path' => $path,
+            'mime' => $mime,
+            'size' => $received,
+            'width' => $width,
+            'height' => $height,
+        ];
+    }
+
+    throw new InvalidArgumentException('Não foi possível baixar a imagem.');
+}
+
+function api_blog_find_existing(string $externalId, string $sourceUrl, string $title): ?array {
+    if ($externalId !== '') {
+        $stmt = db()->prepare('SELECT * FROM blog_posts WHERE external_id=? LIMIT 1');
+        $stmt->execute([$externalId]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return $row;
         }
     }
 
-    throw new InvalidArgumentException('Não foi possível baixar image_url.');
-}
-
-function api_blog_datetime(mixed $value): ?string {
-    $value = trim((string)$value);
-    if ($value === '') {
-        return null;
+    if ($sourceUrl !== '') {
+        $stmt = db()->prepare('SELECT * FROM blog_posts WHERE source_url=? ORDER BY id LIMIT 1');
+        $stmt->execute([$sourceUrl]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return $row;
+        }
     }
 
-    try {
-        return (new DateTimeImmutable($value))->format('Y-m-d H:i:s');
-    } catch (Throwable $e) {
-        throw new InvalidArgumentException('published_at precisa ser uma data válida.');
+    if ($externalId === '' && $sourceUrl === '') {
+        $stmt = db()->prepare('SELECT * FROM blog_posts WHERE title=? ORDER BY id LIMIT 1');
+        $stmt->execute([$title]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return $row;
+        }
     }
+
+    return null;
 }
 
-function api_blog_create(array $input, array $actor): array {
-    $title = api_string($input['title'] ?? '', 'title', 3, 255);
-    $content = api_string($input['content'] ?? ($input['body'] ?? ''), 'content', 1);
-    $excerpt = api_string($input['excerpt'] ?? '', 'excerpt');
-    $requestedSlug = api_string($input['slug'] ?? '', 'slug', 0, 190);
-    $published = api_bool($input['published'] ?? null, true);
-    $publishedAt = api_blog_datetime($input['published_at'] ?? null);
+function api_blog_status(array $input, ?string $publishedAt): array {
+    if (array_key_exists('status', $input)) {
+        $status = strtolower(api_string($input['status'], 'status', 1, 20));
+        if (!in_array($status, ['draft', 'scheduled', 'published'], true)) {
+            throw new InvalidArgumentException('status precisa ser draft, scheduled ou published.');
+        }
+    } else {
+        $published = api_bool($input['published'] ?? null, true);
+        $status = $published ? 'published' : 'draft';
+    }
 
-    if ($published && $publishedAt === null) {
+    if ($status === 'scheduled' && $publishedAt === null) {
+        throw new InvalidArgumentException('published_at é obrigatório quando status=scheduled.');
+    }
+
+    if ($status === 'published' && $publishedAt === null) {
         $publishedAt = date('Y-m-d H:i:s');
     }
 
-    $duplicate = db()->prepare('SELECT id,title,slug,cover_image_url,published,published_at FROM blog_posts WHERE title=? LIMIT 1');
-    $duplicate->execute([$title]);
-    $existing = $duplicate->fetch();
-    if ($existing) {
-        $root = rtrim(api_root_url(), '/');
-        $coverPath = trim((string)($existing['cover_image_url'] ?? ''));
-        $coverUrl = $root . '/assets/post-sem-image.jpg';
-        if ($coverPath !== '') {
-            $coverUrl = preg_match('~^https?://~i', $coverPath)
-                ? $coverPath
-                : $root . '/' . ltrim($coverPath, '/');
-        }
-
-        return [
-            'id' => (int)$existing['id'],
-            'created' => false,
-            'title' => (string)$existing['title'],
-            'slug' => (string)$existing['slug'],
-            'published' => (int)$existing['published'] === 1,
-            'published_at' => $existing['published_at'],
-            'cover_image_url' => $coverUrl,
-            'url' => $root . '/blog/' . rawurlencode((string)$existing['slug']),
-        ];
+    if ($status !== 'draft' && $publishedAt !== null && strtotime($publishedAt) > time()) {
+        $status = 'scheduled';
     }
 
-    $imageUrl = api_string(
-        $input['image_url'] ?? ($input['image'] ?? ($input['cover_image_url'] ?? '')),
-        'image_url',
-        0,
-        2000
+    return [
+        'status' => $status,
+        'published' => $status === 'draft' ? 0 : 1,
+        'published_at' => $publishedAt,
+    ];
+}
+
+function api_blog_prepare(array $input, array $actor): array {
+    $title = api_string($input['title'] ?? '', 'title', 3, 255);
+    $content = api_string($input['content'] ?? ($input['body'] ?? ''), 'content', 1);
+    $safeContent = blog_sanitize_html($content);
+    if ($safeContent === '') {
+        throw new InvalidArgumentException('content ficou vazio depois da validação HTML.');
+    }
+
+    $externalId = api_string($input['external_id'] ?? '', 'external_id', 0, 190);
+    $sourceUrl = api_blog_http_url($input['source_url'] ?? '', 'source_url');
+    $excerpt = api_string($input['excerpt'] ?? '', 'excerpt');
+    $category = api_string($input['category'] ?? '', 'category', 0, 120);
+    $requestedSlug = api_string($input['slug'] ?? '', 'slug', 0, 190);
+    $language = api_string($input['language'] ?? 'pt_BR', 'language', 2, 20);
+    if (!preg_match('/^[A-Za-z]{2,3}(?:[_-][A-Za-z]{2})?$/', $language)) {
+        throw new InvalidArgumentException('language precisa usar formato como pt_BR, en ou es.');
+    }
+
+    $metaTitle = api_string($input['meta_title'] ?? '', 'meta_title', 0, 255);
+    $metaDescription = api_string($input['meta_description'] ?? '', 'meta_description', 0, 500);
+    $canonicalUrl = api_blog_http_url($input['canonical_url'] ?? '', 'canonical_url');
+    $publishedAt = api_blog_datetime($input['published_at'] ?? null);
+    $visibility = api_blog_status($input, $publishedAt);
+
+    $tagsProvided = array_key_exists('tags', $input);
+    $sourcesProvided = array_key_exists('sources', $input);
+    $tags = api_blog_tags($input['tags'] ?? null);
+    $sources = api_blog_sources($input['sources'] ?? null);
+
+    $image = api_blog_image_input($input);
+    $updateExisting = api_bool($input['update_existing'] ?? null, false);
+    $dryRun = api_bool($input['dry_run'] ?? null, false);
+
+    $existing = api_blog_find_existing($externalId, $sourceUrl, $title);
+    $willWrite = !$dryRun && (!$existing || $updateExisting);
+
+    $download = null;
+    if (!$image['remove'] && $image['url'] !== '' && (!$existing || $updateExisting)) {
+        $download = api_blog_download_image($image['url'], $willWrite);
+    }
+
+    $slug = blog_unique_slug(
+        db(),
+        $requestedSlug !== '' ? $requestedSlug : $title,
+        $existing ? (int)$existing['id'] : 0
     );
 
-    $storedImage = '';
-    if ($imageUrl !== '') {
-        $storedImage = api_blog_download_image($imageUrl);
+    return [
+        'actor_id' => (int)$actor['id'],
+        'existing' => $existing,
+        'update_existing' => $updateExisting,
+        'dry_run' => $dryRun,
+        'title' => $title,
+        'external_id' => $externalId,
+        'source_url' => $sourceUrl,
+        'slug' => $slug,
+        'excerpt' => $excerpt,
+        'category' => $category,
+        'content' => $safeContent,
+        'language' => str_replace('-', '_', $language),
+        'meta_title' => $metaTitle,
+        'meta_description' => $metaDescription,
+        'canonical_url' => $canonicalUrl,
+        'status' => $visibility['status'],
+        'published' => $visibility['published'],
+        'published_at' => $visibility['published_at'],
+        'tags_provided' => $tagsProvided,
+        'sources_provided' => $sourcesProvided,
+        'tags' => $tags,
+        'sources' => $sources,
+        'image' => $image,
+        'download' => $download,
+    ];
+}
+
+function api_blog_replace_tags(int $postId, array $tags): void {
+    $delete = db()->prepare('DELETE FROM blog_post_tags WHERE post_id=?');
+    $delete->execute([$postId]);
+    if ($tags === []) {
+        return;
     }
 
-    try {
-        $slug = blog_unique_slug(db(), $requestedSlug !== '' ? $requestedSlug : $title);
-        $safeContent = blog_sanitize_html($content);
-        if ($safeContent === '') {
-            throw new InvalidArgumentException('content ficou vazio depois da validação HTML.');
-        }
+    $insert = db()->prepare('INSERT INTO blog_post_tags (post_id,tag,tag_slug) VALUES (?,?,?)');
+    foreach ($tags as $tag) {
+        $insert->execute([$postId, $tag['tag'], $tag['slug']]);
+    }
+}
 
+function api_blog_replace_sources(int $postId, array $sources): void {
+    $delete = db()->prepare('DELETE FROM blog_post_sources WHERE post_id=?');
+    $delete->execute([$postId]);
+    if ($sources === []) {
+        return;
+    }
+
+    $insert = db()->prepare('INSERT INTO blog_post_sources (post_id,title,url) VALUES (?,?,?)');
+    foreach ($sources as $source) {
+        $insert->execute([$postId, $source['title'], $source['url']]);
+    }
+}
+
+function api_blog_post_tags(int $postId): array {
+    $stmt = db()->prepare('SELECT tag FROM blog_post_tags WHERE post_id=? ORDER BY tag');
+    $stmt->execute([$postId]);
+    return array_map(static fn(array $row): string => (string)$row['tag'], $stmt->fetchAll());
+}
+
+function api_blog_post_sources(int $postId): array {
+    $stmt = db()->prepare('SELECT title,url FROM blog_post_sources WHERE post_id=? ORDER BY id');
+    $stmt->execute([$postId]);
+    return array_map(static fn(array $row): array => [
+        'title' => (string)$row['title'],
+        'url' => (string)$row['url'],
+    ], $stmt->fetchAll());
+}
+
+function api_blog_public_url(string $path): string {
+    $root = rtrim(api_root_url(), '/');
+    if ($path === '') {
+        return $root . '/assets/post-sem-image.jpg';
+    }
+    if (preg_match('~^https?://~i', $path)) {
+        return $path;
+    }
+    return $root . '/' . ltrim($path, '/');
+}
+
+function api_blog_result(array $row, string $mode, ?array $download = null): array {
+    $id = (int)($row['id'] ?? 0);
+    $result = [
+        'id' => $id,
+        'created' => $mode === 'created',
+        'updated' => $mode === 'updated',
+        'reused' => $mode === 'reused',
+        'dry_run' => $mode === 'dry_run',
+        'title' => (string)$row['title'],
+        'external_id' => (string)($row['external_id'] ?? ''),
+        'source_url' => (string)($row['source_url'] ?? ''),
+        'slug' => (string)$row['slug'],
+        'category' => (string)($row['category'] ?? ''),
+        'status' => (string)($row['status'] ?? ''),
+        'published' => (int)($row['published'] ?? 0) === 1,
+        'published_at' => $row['published_at'] ?? null,
+        'language' => (string)($row['language'] ?? 'pt_BR'),
+        'tags' => $id > 0 ? api_blog_post_tags($id) : [],
+        'sources' => $id > 0 ? api_blog_post_sources($id) : [],
+        'cover_image_url' => api_blog_public_url((string)($row['cover_image_url'] ?? '')),
+        'url' => rtrim(api_root_url(), '/') . '/blog/' . rawurlencode((string)$row['slug']),
+    ];
+
+    if ($download !== null) {
+        $result['image'] = [
+            'downloaded' => true,
+            'source_url' => (string)$download['source_url'],
+            'final_url' => (string)$download['final_url'],
+            'path' => (string)$download['path'],
+            'url' => api_blog_public_url((string)$download['path']),
+            'mime' => (string)$download['mime'],
+            'size' => (int)$download['size'],
+            'width' => (int)$download['width'],
+            'height' => (int)$download['height'],
+        ];
+    }
+
+    return $result;
+}
+
+function api_blog_apply(array $prepared, array &$oldImagesToDelete): array {
+    $existing = $prepared['existing'];
+    if ($prepared['dry_run']) {
+        $preview = $existing ?: [
+            'id' => 0,
+            'title' => $prepared['title'],
+            'external_id' => $prepared['external_id'],
+            'source_url' => $prepared['source_url'],
+            'slug' => $prepared['slug'],
+            'category' => $prepared['category'],
+            'status' => $prepared['status'],
+            'published' => $prepared['published'],
+            'published_at' => $prepared['published_at'],
+            'language' => $prepared['language'],
+            'cover_image_url' => '',
+        ];
+        $result = api_blog_result($preview, 'dry_run', $prepared['download']);
+        $result['would_create'] = !$existing;
+        $result['would_update'] = (bool)$existing && $prepared['update_existing'];
+        $result['tags'] = array_column($prepared['tags'], 'tag');
+        $result['sources'] = $prepared['sources'];
+        return $result;
+    }
+
+    if ($existing && !$prepared['update_existing']) {
+        return api_blog_result($existing, 'reused');
+    }
+
+    $imagePath = (string)($existing['cover_image_url'] ?? '');
+    $imageAlt = (string)($existing['cover_image_alt'] ?? '');
+    $imageCredit = (string)($existing['cover_image_credit'] ?? '');
+    $imageSourceUrl = (string)($existing['cover_image_source_url'] ?? '');
+
+    if ($prepared['image']['provided']) {
+        if ($prepared['image']['remove']) {
+            $imagePath = '';
+            $imageAlt = '';
+            $imageCredit = '';
+            $imageSourceUrl = '';
+        } elseif ($prepared['download'] !== null) {
+            $imagePath = (string)$prepared['download']['path'];
+            $imageAlt = (string)$prepared['image']['alt'];
+            $imageCredit = (string)$prepared['image']['credit'];
+            $imageSourceUrl = (string)$prepared['image']['source_url'];
+        }
+    }
+
+    if ($existing) {
+        $oldImage = (string)($existing['cover_image_url'] ?? '');
         $stmt = db()->prepare(
-            'INSERT INTO blog_posts
-                (author_user_id,title,slug,excerpt,content,cover_image_url,published,published_at)
-             VALUES (?,?,?,?,?,?,?,?)'
+            'UPDATE blog_posts SET
+                external_id=?,source_url=?,title=?,slug=?,excerpt=?,category=?,content=?,
+                cover_image_url=?,cover_image_alt=?,cover_image_credit=?,cover_image_source_url=?,
+                published=?,status=?,published_at=?,language=?,meta_title=?,meta_description=?,canonical_url=?
+             WHERE id=?'
         );
         $stmt->execute([
-            (int)$actor['id'],
-            $title,
-            $slug,
-            $excerpt !== '' ? $excerpt : null,
-            $safeContent,
-            $storedImage !== '' ? $storedImage : null,
-            $published ? 1 : 0,
-            $publishedAt,
+            $prepared['external_id'] !== '' ? $prepared['external_id'] : null,
+            $prepared['source_url'] !== '' ? $prepared['source_url'] : null,
+            $prepared['title'],
+            $prepared['slug'],
+            $prepared['excerpt'] !== '' ? $prepared['excerpt'] : null,
+            $prepared['category'] !== '' ? $prepared['category'] : null,
+            $prepared['content'],
+            $imagePath !== '' ? $imagePath : null,
+            $imageAlt !== '' ? $imageAlt : null,
+            $imageCredit !== '' ? $imageCredit : null,
+            $imageSourceUrl !== '' ? $imageSourceUrl : null,
+            $prepared['published'],
+            $prepared['status'],
+            $prepared['published_at'],
+            $prepared['language'],
+            $prepared['meta_title'] !== '' ? $prepared['meta_title'] : null,
+            $prepared['meta_description'] !== '' ? $prepared['meta_description'] : null,
+            $prepared['canonical_url'] !== '' ? $prepared['canonical_url'] : null,
+            (int)$existing['id'],
         ]);
+        $postId = (int)$existing['id'];
+        $mode = 'updated';
 
-        $id = (int)db()->lastInsertId();
-        audit_log((int)$actor['id'], 'api.blog.created', 'blog_post', $id, $title);
-
-        $root = rtrim(api_root_url(), '/');
-        return [
-            'id' => $id,
-            'created' => true,
-            'title' => $title,
-            'slug' => $slug,
-            'published' => $published,
-            'published_at' => $publishedAt,
-            'image_downloaded' => $storedImage !== '',
-            'cover_image_path' => $storedImage,
-            'cover_image_url' => $storedImage !== ''
-                ? $root . '/' . ltrim($storedImage, '/')
-                : $root . '/assets/post-sem-image.jpg',
-            'url' => $root . '/blog/' . rawurlencode($slug),
-        ];
-    } catch (Throwable $e) {
-        if ($storedImage !== '') {
-            blog_delete_uploaded_image($storedImage);
+        if ($oldImage !== '' && $oldImage !== $imagePath) {
+            $oldImagesToDelete[] = $oldImage;
         }
-        throw $e;
+    } else {
+        $stmt = db()->prepare(
+            'INSERT INTO blog_posts
+                (author_user_id,external_id,source_url,title,slug,excerpt,category,content,
+                 cover_image_url,cover_image_alt,cover_image_credit,cover_image_source_url,
+                 published,status,published_at,language,meta_title,meta_description,canonical_url)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        );
+        $stmt->execute([
+            $prepared['actor_id'],
+            $prepared['external_id'] !== '' ? $prepared['external_id'] : null,
+            $prepared['source_url'] !== '' ? $prepared['source_url'] : null,
+            $prepared['title'],
+            $prepared['slug'],
+            $prepared['excerpt'] !== '' ? $prepared['excerpt'] : null,
+            $prepared['category'] !== '' ? $prepared['category'] : null,
+            $prepared['content'],
+            $imagePath !== '' ? $imagePath : null,
+            $imageAlt !== '' ? $imageAlt : null,
+            $imageCredit !== '' ? $imageCredit : null,
+            $imageSourceUrl !== '' ? $imageSourceUrl : null,
+            $prepared['published'],
+            $prepared['status'],
+            $prepared['published_at'],
+            $prepared['language'],
+            $prepared['meta_title'] !== '' ? $prepared['meta_title'] : null,
+            $prepared['meta_description'] !== '' ? $prepared['meta_description'] : null,
+            $prepared['canonical_url'] !== '' ? $prepared['canonical_url'] : null,
+        ]);
+        $postId = (int)db()->lastInsertId();
+        $mode = 'created';
     }
+
+    if (!$existing || $prepared['tags_provided']) {
+        api_blog_replace_tags($postId, $prepared['tags']);
+    }
+    if (!$existing || $prepared['sources_provided']) {
+        api_blog_replace_sources($postId, $prepared['sources']);
+    }
+
+    audit_log(
+        $prepared['actor_id'],
+        $mode === 'created' ? 'api.blog.created' : 'api.blog.updated',
+        'blog_post',
+        $postId,
+        $prepared['title']
+    );
+
+    $stmt = db()->prepare('SELECT * FROM blog_posts WHERE id=? LIMIT 1');
+    $stmt->execute([$postId]);
+    $row = $stmt->fetch();
+    return api_blog_result($row, $mode, $prepared['download']);
 }
 
 api_handle(static function() use ($actor): array {
@@ -339,31 +747,61 @@ api_handle(static function() use ($actor): array {
         throw new InvalidArgumentException('A API de blog aceita no máximo 10 posts por chamada.');
     }
 
-    $posts = [];
-    $createdImages = [];
+    $prepared = [];
+    $newImages = [];
 
-    db()->beginTransaction();
     try {
         foreach ($items as $item) {
-            $post = api_blog_create($item, $actor);
-            $posts[] = $post;
-            if (!empty($post['created']) && !empty($post['cover_image_path'])) {
-                $createdImages[] = (string)$post['cover_image_path'];
+            $entry = api_blog_prepare($item, $actor);
+            $prepared[] = $entry;
+            if (!$entry['dry_run'] && !empty($entry['download']['path'])) {
+                $newImages[] = (string)$entry['download']['path'];
             }
         }
-        db()->commit();
     } catch (Throwable $e) {
-        if (db()->inTransaction()) {
-            db()->rollBack();
-        }
-        foreach ($createdImages as $image) {
+        foreach ($newImages as $image) {
             blog_delete_uploaded_image($image);
         }
         throw $e;
     }
 
+    $writeCount = count(array_filter(
+        $prepared,
+        static fn(array $entry): bool => !$entry['dry_run']
+            && (!$entry['existing'] || $entry['update_existing'])
+    ));
+
+    $results = [];
+    $oldImagesToDelete = [];
+
+    if ($writeCount > 0) {
+        db()->beginTransaction();
+    }
+
+    try {
+        foreach ($prepared as $entry) {
+            $results[] = api_blog_apply($entry, $oldImagesToDelete);
+        }
+        if (db()->inTransaction()) {
+            db()->commit();
+        }
+    } catch (Throwable $e) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+        foreach ($newImages as $image) {
+            blog_delete_uploaded_image($image);
+        }
+        throw $e;
+    }
+
+    foreach (array_unique($oldImagesToDelete) as $image) {
+        blog_delete_uploaded_image($image);
+    }
+
     return [
         'received' => count($items),
-        'posts' => $posts,
+        'written' => $writeCount,
+        'posts' => $results,
     ];
 });
