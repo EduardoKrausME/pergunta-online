@@ -136,4 +136,30 @@ body.admin-layout{
         padding-top:34px;
     }
 }
+.admin-layout .admin-bar a.active{
+    position:relative;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+}
+.admin-layout .admin-bar a.active:before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:9px;
+    bottom:9px;
+    width:3px;
+    border-radius:0 3px 3px 0;
+    background:var(--accent);
+}
+@media(max-width:900px){
+    .admin-layout .admin-bar a.active:before{
+        left:10px;
+        right:10px;
+        top:auto;
+        bottom:2px;
+        width:auto;
+        height:3px;
+        border-radius:3px 3px 0 0;
+    }
+}
 
