@@ -46,11 +46,13 @@ $stmt = db()->prepare("
 $stmt->execute($params);
 
 $questions = array_map(static function(array $row): array {
-    $waitingDays = !empty($row['waiting_since']) && in_array((string)$row['status'], ['waiting','answered'], true)
-        ? max(0, (int)floor(((string)$row['status'] === 'answered' && !empty($row['answered_at'])
+    $waitingDays = 0;
+    if (!empty($row['waiting_since']) && in_array((string)$row['status'], ['waiting', 'answered'], true)) {
+        $silenceEnd = (string)$row['status'] === 'answered' && !empty($row['answered_at'])
             ? strtotime((string)$row['answered_at'])
-            : time()) - strtotime((string)$row['waiting_since'])) / 86400))
-        : 0;
+            : time();
+        $waitingDays = max(0, (int)floor(($silenceEnd - strtotime((string)$row['waiting_since'])) / 86400));
+    }
 
     return [
         'id' => (int)$row['id'],
