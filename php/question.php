@@ -12,7 +12,16 @@ $id = (int)Request::get('id', Request::INT, 0);
 $viewer = current_user();
 $viewerId = (int)($viewer['id'] ?? 0);
 $isAdmin = (int)(($viewer['role'] ?? '') === 'admin');
-$stmt = db()->prepare('SELECT q.*,u.name author_name,(SELECT COUNT(*) FROM question_votes v WHERE v.question_id=q.id) vote_count FROM questions q JOIN users u ON u.id=q.user_id WHERE q.id=? AND (q.published=1 OR q.user_id=? OR ?=1) LIMIT 1');
+
+$stmt = db()->prepare("
+    SELECT q.*,u.name author_name,dq.title duplicate_title
+    FROM questions q
+    JOIN users u ON u.id=q.user_id
+    LEFT JOIN questions dq ON dq.id=q.duplicate_of
+    WHERE q.id=? AND q.deleted_at IS NULL
+      AND (q.published=1 OR q.user_id=? OR ?=1)
+    LIMIT 1
+");
 $stmt->execute([$id, $viewerId, $isAdmin]);
 $question = $stmt->fetch();
 
@@ -22,11 +31,64 @@ if (!$question) {
     exit;
 }
 
-$showSilence = !empty($question['waiting_since']);
+$showSilence = in_array((string)$question['status'], ['waiting', 'answered'], true) && !empty($question['waiting_since']);
 $silenceDays = 0;
 if ($showSilence) {
-    $silenceEnd = $question['status'] === 'answered' && $question['answered_at'] ? strtotime((string)$question['answered_at']) : time();
+    $silenceEnd = $question['status'] === 'answered' && $question['answered_at']
+        ? strtotime((string)$question['answered_at'])
+        : time();
     $silenceDays = max(0, (int)floor(($silenceEnd - strtotime((string)$question['waiting_since'])) / 86400));
+}
+
+$evidenceStmt = db()->prepare("
+    SELECT id,evidence_type,title,reference_value,storage_name,original_name,created_at
+    FROM question_evidence WHERE question_id=? ORDER BY created_at
+");
+$evidenceStmt->execute([$id]);
+$evidence = array_map(static fn(array $row): array => [
+    'title' => (string)$row['title'],
+    'type' => (string)$row['evidence_type'],
+    'reference' => (string)($row['reference_value'] ?? ''),
+    'is_url' => (string)$row['evidence_type'] === 'url' && !empty($row['reference_value']),
+    'is_text' => (string)$row['evidence_type'] === 'text' && !empty($row['reference_value']),
+    'has_file' => !empty($row['storage_name']),
+    'download_url' => !empty($row['storage_name']) ? base_url('evidence.php?id=' . (int)$row['id']) : '',
+    'original_name' => (string)($row['original_name'] ?? ''),
+    'created_at' => date('d/m/Y', strtotime((string)$row['created_at'])),
+], $evidenceStmt->fetchAll());
+
+$publicEvents = ['created','status_changed','answer_updated','published','edited','evidence_added','marked_duplicate','respondent_assigned'];
+$placeholders = implode(',', array_fill(0, count($publicEvents), '?'));
+$historyStmt = db()->prepare("
+    SELECT h.*,u.name actor_name
+    FROM question_history h
+    LEFT JOIN users u ON u.id=h.actor_user_id
+    WHERE h.question_id=? AND h.event_type IN ({$placeholders})
+    ORDER BY h.created_at ASC,h.id ASC
+");
+$historyStmt->execute(array_merge([$id], $publicEvents));
+$history = array_map(static fn(array $row): array => [
+    'label' => question_event_label((string)$row['event_type']),
+    'details' => (string)($row['details'] ?? ''),
+    'actor' => (string)($row['actor_name'] ?? 'Sistema'),
+    'status_change' => !empty($row['old_status']) && !empty($row['new_status']) && $row['old_status'] !== $row['new_status']
+        ? status_label((string)$row['old_status']) . ' → ' . status_label((string)$row['new_status'])
+        : '',
+    'created_at' => date('d/m/Y H:i', strtotime((string)$row['created_at'])),
+], $historyStmt->fetchAll());
+
+$canRespond = false;
+if ($viewer && ($viewer['role'] ?? '') === 'admin') {
+    $canRespond = true;
+} elseif ($viewer && ($viewer['role'] ?? '') === 'respondent' && !empty($question['target_id'])) {
+    $respondent = db()->prepare('SELECT 1 FROM target_users WHERE target_id=? AND user_id=?');
+    $respondent->execute([(int)$question['target_id'], $viewerId]);
+    $canRespond = (bool)$respondent->fetchColumn();
+}
+
+$duplicateUrl = '';
+if (!empty($question['duplicate_of'])) {
+    $duplicateUrl = base_url('question.php?id=' . (int)$question['duplicate_of']);
 }
 
 render_page('question', [
@@ -40,10 +102,21 @@ render_page('question', [
     'author_name' => (string)$question['author_name'],
     'target_name' => (string)$question['target_name'],
     'created_at' => date('d/m/Y H:i', strtotime((string)$question['created_at'])),
-    'vote_count' => (int)$question['vote_count'],
+    'vote_count' => (int)db()->query('SELECT COUNT(*) FROM question_votes WHERE question_id=' . (int)$id)->fetchColumn(),
     'show_silence' => $showSilence,
     'silence_days' => $silenceDays,
     'has_answer' => !empty($question['answer_text']),
     'answer_html' => !empty($question['answer_text']) ? nl2br(h((string)$question['answer_text'])) : '',
     'answered_at' => !empty($question['answered_at']) ? date('d/m/Y H:i', strtotime((string)$question['answered_at'])) : '',
+    'evidence' => $evidence,
+    'has_evidence' => $evidence !== [],
+    'history' => $history,
+    'has_history' => $history !== [],
+    'can_respond' => $canRespond,
+    'respond_url' => base_url('respond.php?id=' . $id),
+    'can_report' => $viewer !== null && (int)$question['published'] === 1,
+    'report_url' => base_url('report.php'),
+    'is_duplicate' => !empty($question['duplicate_of']),
+    'duplicate_url' => $duplicateUrl,
+    'duplicate_title' => (string)($question['duplicate_title'] ?? ''),
 ], (string)$question['title']);
