@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
-const CHATGPT_API_TOKEN_HASH = 'f76fb22ac9631e6eaeddecefb2a10cb6d364effde307ab7bc5981e7cfdfa0cae';
+const CHATGPT_API_TOKEN_HASH = '2d550b0a5fc3a4a4ff8ff62f94c4e25f3d7c1b345dedfad65cb8123928366a37';
 
 function api_json(array $data, int $status = 200): never {
     http_response_code($status);
