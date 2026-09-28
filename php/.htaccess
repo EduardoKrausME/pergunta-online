@@ -16,6 +16,10 @@ Options -Indexes -MultiViews
     RewriteCond %{THE_REQUEST} \s/+(.+/)index\.php(?:[?\s]) [NC]
     RewriteRule ^(.+)/index\.php$ /$1/ [R=301,L,NE]
 
+    # ChatGPT API endpoints keep their physical .php filenames. The child
+    # .htaccess disables rewriting inside that directory, but this exclusion is
+    # also required here because parent per-directory rules run first.
+    RewriteCond %{REQUEST_URI} !/admin/api-chatgpt/ [NC]
     RewriteCond %{THE_REQUEST} \s/+(.+?)\.php(?:[?\s]) [NC]
     RewriteRule ^(.+)\.php$ /$1 [R=301,L,NE]
 
