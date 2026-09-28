@@ -8,6 +8,8 @@ header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
+const CHATGPT_API_TOKEN_HASH = 'f76fb22ac9631e6eaeddecefb2a10cb6d364effde307ab7bc5981e7cfdfa0cae';
+
 function api_json(array $data, int $status = 200): never {
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -108,13 +110,9 @@ function api_require_auth(): array {
     }
 
     $config = is_array($appconfig['chatgpt_api'] ?? null) ? $appconfig['chatgpt_api'] : [];
-    $expected = trim((string)(getenv('CHATGPT_API_TOKEN') ?: ($config['token'] ?? '')));
-    if ($expected === '') {
-        api_error('A API ChatGPT está desativada. Configure CHATGPT_API_TOKEN ou chatgpt_api.token.', 503);
-    }
 
     $provided = api_bearer_token();
-    if ($provided === '' || !hash_equals($expected, $provided)) {
+    if ($provided === '' || !hash_equals(CHATGPT_API_TOKEN_HASH, hash('sha256', $provided))) {
         api_error('Token de API inválido.', 401);
     }
 
