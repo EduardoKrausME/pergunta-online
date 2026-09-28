@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 
 $id = (int)Request::get('id', Request::INT, 0);

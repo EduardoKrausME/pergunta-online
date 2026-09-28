@@ -5,14 +5,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/layout.php';
 
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 if (current_user()) {
     redirect('/');
 }
 if (app_setting('registration_enabled', '1') !== '1') {
     flash('warning', 'O cadastro público está desativado.');
-    redirect('login.php');
+    redirect('login');
 }
 
 $error = '';

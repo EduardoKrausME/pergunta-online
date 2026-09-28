@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/layout.php';
 
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 
 $user = current_user();
@@ -74,8 +74,8 @@ foreach ($questions as $question) {
         'body_html' => nl2br(h((string)$question['body'])),
         'target_name' => (string)$question['target_name'],
         'author_name' => (string)$question['author_name'],
-        'question_url' => base_url('question.php?id=' . $id),
-        'action_url' => base_url('action.php'),
+        'question_url' => base_url('question?id=' . $id),
+        'action_url' => base_url('action'),
         'vote_count' => (int)$question['vote_count'],
         'vote_active_class' => $isVoted ? 'active' : '',
         'save_active_class' => $isSaved ? 'active' : '',

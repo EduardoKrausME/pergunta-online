@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $user = require_login();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -33,4 +33,4 @@ $upsert = db()->prepare("
 $upsert->execute([$id, (int)$user['id'], $reason, $details ?: null]);
 question_history_add($id, (int)$user['id'], 'reported', (string)$question['status'], (string)$question['status'], $reason);
 flash('success', 'Denúncia registrada para análise.');
-redirect('question.php?id=' . $id);
+redirect('question?id=' . $id);

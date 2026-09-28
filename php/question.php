@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/layout.php';
 
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 
 $id = (int)Request::get('id', Request::INT, 0);
@@ -53,7 +53,7 @@ $evidence = array_map(static fn(array $row): array => [
     'is_url' => (string)$row['evidence_type'] === 'url' && !empty($row['reference_value']),
     'is_text' => (string)$row['evidence_type'] === 'text' && !empty($row['reference_value']),
     'has_file' => !empty($row['storage_name']),
-    'download_url' => !empty($row['storage_name']) ? base_url('evidence.php?id=' . (int)$row['id']) : '',
+    'download_url' => !empty($row['storage_name']) ? base_url('evidence?id=' . (int)$row['id']) : '',
     'original_name' => (string)($row['original_name'] ?? ''),
     'created_at' => date('d/m/Y', strtotime((string)$row['created_at'])),
 ], $evidenceStmt->fetchAll());
@@ -89,7 +89,7 @@ if ($viewer && ($viewer['role'] ?? '') === 'admin') {
 
 $duplicateUrl = '';
 if (!empty($question['duplicate_of'])) {
-    $duplicateUrl = base_url('question.php?id=' . (int)$question['duplicate_of']);
+    $duplicateUrl = base_url('question?id=' . (int)$question['duplicate_of']);
 }
 
 render_page('question', [
@@ -118,9 +118,9 @@ render_page('question', [
     'history' => $history,
     'has_history' => $history !== [],
     'can_respond' => $canRespond,
-    'respond_url' => base_url('respond.php?id=' . $id),
+    'respond_url' => base_url('respond?id=' . $id),
     'can_report' => $viewer !== null && (int)$question['published'] === 1,
-    'report_url' => base_url('report.php'),
+    'report_url' => base_url('report'),
     'is_duplicate' => !empty($question['duplicate_of']),
     'duplicate_url' => $duplicateUrl,
     'duplicate_title' => (string)($question['duplicate_title'] ?? ''),

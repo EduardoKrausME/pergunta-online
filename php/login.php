@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/layout.php';
 
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 if (current_user()) {
     redirect('/');

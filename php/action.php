@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
-if (!app_installed()) redirect('install.php');
+if (!app_installed()) redirect('install');
 $user=require_login();
 if($_SERVER['REQUEST_METHOD']!=='POST'){redirect('/');}
 require_csrf();
@@ -13,4 +13,4 @@ $table=$action==='vote'?'question_votes':($action==='save'?'question_saves':'');
 if($table===''){redirect('/');}
 $check=db()->prepare("SELECT 1 FROM {$table} WHERE question_id=? AND user_id=?");$check->execute([$id,$user['id']]);
 if($check->fetch()){$del=db()->prepare("DELETE FROM {$table} WHERE question_id=? AND user_id=?");$del->execute([$id,$user['id']]);}else{$ins=db()->prepare("INSERT INTO {$table} (question_id,user_id) VALUES (?,?)");$ins->execute([$id,$user['id']]);}
-redirect('question.php?id='.$id);
+redirect('question?id='.$id);

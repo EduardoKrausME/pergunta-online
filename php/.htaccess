@@ -1,8 +1,28 @@
-Options -Indexes
+Options -Indexes -MultiViews
 
 <FilesMatch "^(config\.php|schema\.sql|README\.md|\.env|\.env\..*)$">
     Require all denied
 </FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Canonical public URLs never expose index.php or the .php extension.
+    RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.php(?:[?\s]) [NC]
+    RewriteRule ^index\.php$ ./ [R=301,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+(.+/)index\.php(?:[?\s]) [NC]
+    RewriteRule ^(.+)/index\.php$ $1/ [R=301,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+(.+?)\.php(?:[?\s]) [NC]
+    RewriteRule ^(.+)\.php$ $1 [R=301,L,NE]
+
+    # Resolve extensionless routes to the existing PHP files internally.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.+?)/?$ $1.php [END,QSA]
+</IfModule>
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"

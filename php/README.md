@@ -40,7 +40,7 @@ return [
 
 `app_url` pode ficar vazio para detectar automaticamente o domínio e o subdiretório. Em produção, altere a senha diretamente no `config.php` do servidor e não faça commit da credencial real no repositório público.
 
-Depois acesse `install.php`. O instalador cria as tabelas e pede o primeiro administrador. Depois disso, novos usuários podem se cadastrar em `register.php` e recebem sempre o perfil `user`.
+Depois acesse `/install`. O instalador cria as tabelas e pede o primeiro administrador. Depois disso, novos usuários podem se cadastrar em `/register` e recebem sempre o perfil `user`.
 
 ## Funcionalidades
 

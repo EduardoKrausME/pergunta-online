@@ -154,7 +154,7 @@ function require_login(): array {
     $user = current_user();
     if (!$user) {
         flash('warning', 'Entre na sua conta para continuar.');
-        redirect('login.php');
+        redirect('login');
     }
     return $user;
 }

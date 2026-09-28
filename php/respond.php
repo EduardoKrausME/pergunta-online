@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $user = require_login();
 $id = (int)Request::get('id', Request::INT, 0);
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (InvalidArgumentException $e) {
         flash('error', $e->getMessage());
     }
-    redirect('respond.php?id=' . $id);
+    redirect('respond?id=' . $id);
 }
 
 $stmt->execute([$id]);
@@ -89,7 +89,7 @@ $evidence = array_map(static fn(array $row): array => [
     'reference' => (string)($row['reference_value'] ?? ''),
     'has_reference' => !empty($row['reference_value']),
     'has_file' => !empty($row['storage_name']),
-    'download_url' => !empty($row['storage_name']) ? base_url('evidence.php?id=' . (int)$row['id']) : '',
+    'download_url' => !empty($row['storage_name']) ? base_url('evidence?id=' . (int)$row['id']) : '',
     'original_name' => (string)($row['original_name'] ?? ''),
     'created_at' => date('d/m/Y H:i', strtotime((string)$row['created_at'])),
 ], $evidenceStmt->fetchAll());
@@ -105,6 +105,6 @@ render_page('respond', [
     'is_answered' => (string)$question['status'] === 'answered',
     'evidence' => $evidence,
     'has_evidence' => $evidence !== [],
-    'question_url' => base_url('question.php?id=' . $id),
-    'responses_url' => base_url('responses.php'),
+    'question_url' => base_url('question?id=' . $id),
+    'responses_url' => base_url('responses'),
 ], 'Responder pergunta');

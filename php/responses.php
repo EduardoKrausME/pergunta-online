@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $user = require_login();
 
@@ -68,8 +68,8 @@ $questions = array_map(static function(array $row): array {
         'waiting_days' => $waitingDays,
         'has_owner' => !empty($row['taken_by_name']),
         'taken_by_name' => (string)($row['taken_by_name'] ?? ''),
-        'respond_url' => base_url('respond.php?id=' . (int)$row['id']),
-        'question_url' => base_url('question.php?id=' . (int)$row['id']),
+        'respond_url' => base_url('respond?id=' . (int)$row['id']),
+        'question_url' => base_url('question?id=' . (int)$row['id']),
     ];
 }, $stmt->fetchAll());
 
@@ -77,7 +77,7 @@ $filters = [];
 foreach (['' => 'Todas', 'open' => 'Abertas', 'waiting' => 'Aguardando', 'taken' => 'Assumidas', 'answered' => 'Respondidas'] as $value => $label) {
     $filters[] = [
         'label' => $label,
-        'url' => base_url('responses.php' . ($value !== '' ? '?status=' . $value : '')),
+        'url' => base_url('responses' . ($value !== '' ? '?status=' . $value : '')),
         'active_class' => $status === $value ? 'active' : '',
     ];
 }

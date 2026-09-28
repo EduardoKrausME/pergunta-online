@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/layout.php';
 
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $user = require_login();
 $error = '';
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success', $autoPublish
             ? 'Pergunta publicada. Agora ela pode ganhar relevância e histórico.'
             : 'Pergunta enviada e aguardando moderação.');
-        redirect('question.php?id=' . $id);
+        redirect('question?id=' . $id);
     }
 }
 
