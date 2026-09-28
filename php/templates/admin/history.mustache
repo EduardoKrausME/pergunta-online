@@ -3,7 +3,7 @@
 <section class="admin-head">
     <div class="eyebrow">HISTÓRICO</div>
     <h1>Auditoria administrativa</h1>
-    <p class="muted">{{total}} evento(s) encontrados. Alterações sensíveis ficam registradas com autor e data.</p>
+    <p class="muted">{{total}} evento(s) encontrados. Alterações sensíveis ficam registradas com responsável e data.</p>
 </section>
 
 <form method="get" class="admin-filterbar">
@@ -15,7 +15,7 @@
 <section class="panel">
     <div class="table-wrap">
         <table class="admin-table">
-            <thead><tr><th>Data</th><th>Administrador</th><th>Ação</th><th>Entidade</th><th>Detalhes</th></tr></thead>
+            <thead><tr><th>Data</th><th>Responsável</th><th>Ação</th><th>Entidade</th><th>Detalhes</th></tr></thead>
             <tbody>
             {{#rows}}
                 <tr>
