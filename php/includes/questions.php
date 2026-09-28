@@ -90,7 +90,7 @@ function question_update_state(
             question_history_add($questionId, $actorId, 'answer_updated', $oldStatus, $status, $answer === '' ? 'Resposta removida.' : 'Resposta atualizada.');
             audit_log($actorId, 'question.answer_updated', 'question', $questionId);
         }
-        if ($published && (string)$current['moderation_status'] === 'pending') {
+        if ($published && (string)$current['moderation_status'] !== 'approved') {
             question_history_add($questionId, $actorId, 'moderation_approved', $oldStatus, $status, 'Aprovada ao publicar.');
             audit_log($actorId, 'question.moderation_approved', 'question', $questionId, 'Aprovada ao publicar.');
         }
