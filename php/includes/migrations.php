@@ -241,6 +241,64 @@ function run_schema_migrations(PDO $pdo): void {
         $upsert->execute();
         $version = 4;
     }
+
+    if ($version < 5) {
+        migration_add_column($pdo, 'blog_posts', 'external_id', 'VARCHAR(190) NULL AFTER author_user_id');
+        migration_add_column($pdo, 'blog_posts', 'source_url', 'VARCHAR(1000) NULL AFTER external_id');
+        migration_add_column($pdo, 'blog_posts', 'category', 'VARCHAR(120) NULL AFTER excerpt');
+        migration_add_column($pdo, 'blog_posts', 'cover_image_alt', 'VARCHAR(255) NULL AFTER cover_image_url');
+        migration_add_column($pdo, 'blog_posts', 'cover_image_credit', 'VARCHAR(255) NULL AFTER cover_image_alt');
+        migration_add_column($pdo, 'blog_posts', 'cover_image_source_url', 'VARCHAR(1000) NULL AFTER cover_image_credit');
+        migration_add_column($pdo, 'blog_posts', 'status', "ENUM('draft','scheduled','published') NOT NULL DEFAULT 'draft' AFTER published");
+        migration_add_column($pdo, 'blog_posts', 'language', "VARCHAR(20) NOT NULL DEFAULT 'pt_BR' AFTER published_at");
+        migration_add_column($pdo, 'blog_posts', 'meta_title', 'VARCHAR(255) NULL AFTER language');
+        migration_add_column($pdo, 'blog_posts', 'meta_description', 'VARCHAR(500) NULL AFTER meta_title');
+        migration_add_column($pdo, 'blog_posts', 'canonical_url', 'VARCHAR(1000) NULL AFTER meta_description');
+
+        migration_add_unique_index($pdo, 'blog_posts', 'uq_blog_posts_external_id', 'external_id');
+        migration_add_index($pdo, 'blog_posts', 'idx_blog_posts_status', 'status,published_at,created_at');
+        migration_add_index($pdo, 'blog_posts', 'idx_blog_posts_category', 'category');
+
+        $pdo->exec("
+            UPDATE blog_posts
+               SET status = CASE
+                   WHEN published = 0 THEN 'draft'
+                   WHEN published_at IS NOT NULL AND published_at > NOW() THEN 'scheduled'
+                   ELSE 'published'
+               END
+        ");
+
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS blog_post_tags (
+                post_id BIGINT UNSIGNED NOT NULL,
+                tag VARCHAR(120) NOT NULL,
+                tag_slug VARCHAR(120) NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (post_id,tag_slug),
+                INDEX idx_blog_post_tags_slug (tag_slug),
+                CONSTRAINT fk_blog_post_tags_post FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS blog_post_sources (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT UNSIGNED NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                url VARCHAR(1000) NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_blog_post_sources_post (post_id,created_at),
+                CONSTRAINT fk_blog_post_sources_post FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $upsert = $pdo->prepare("
+            INSERT INTO app_meta (meta_key,meta_value) VALUES ('schema_version','5')
+            ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value)
+        ");
+        $upsert->execute();
+        $version = 5;
+    }
 }
 
 function migration_add_column(PDO $pdo, string $table, string $column, string $definition): void {
@@ -254,6 +312,17 @@ function migration_add_column(PDO $pdo, string $table, string $column, string $d
     }
 }
 
+
+function migration_add_unique_index(PDO $pdo, string $table, string $index, string $columns): void {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?
+    ");
+    $stmt->execute([$table, $index]);
+    if (!(int)$stmt->fetchColumn()) {
+        $pdo->exec("ALTER TABLE `{$table}` ADD UNIQUE INDEX `{$index}` ({$columns})");
+    }
+}
 
 function migration_add_index(PDO $pdo, string $table, string $index, string $columns): void {
     $stmt = $pdo->prepare("
