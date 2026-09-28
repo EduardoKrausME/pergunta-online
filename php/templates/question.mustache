@@ -8,10 +8,25 @@
     <h1>{{title}}</h1>
     <p class="lead">{{{body_html}}}</p>
     <div class="meta">Pergunta de <strong>{{author_name}}</strong> para <strong>{{target_name}}</strong> · {{created_at}}</div>
+
+    {{#is_duplicate}}
+    <div class="flash warning question-duplicate">
+        Esta pergunta foi marcada como duplicada. A discussão principal está em
+        <a href="{{duplicate_url}}"><strong>{{duplicate_title}}</strong></a>.
+    </div>
+    {{/is_duplicate}}
+
     <div class="detail-stats">
         <strong>{{vote_count}}</strong><span>endossos “Boa!”</span>
         {{#show_silence}}<strong>{{silence_days}}</strong><span>dias de silêncio registrados</span>{{/show_silence}}
     </div>
+
+    {{#can_respond}}
+    <div class="question-response-action">
+        <a class="button primary" href="{{respond_url}}">Assumir pauta / registrar resposta</a>
+    </div>
+    {{/can_respond}}
+
     {{#has_answer}}
     <section class="answer">
         <div class="eyebrow">RESPOSTA REGISTRADA</div>
@@ -19,5 +34,59 @@
         {{#answered_at}}<small>Registrada em {{answered_at}}</small>{{/answered_at}}
     </section>
     {{/has_answer}}
+
+    {{#has_evidence}}
+    <section class="question-evidence">
+        <div class="eyebrow">EVIDÊNCIAS</div>
+        <div class="admin-simple-list">
+        {{#evidence}}
+            <div>
+                <strong>{{title}}</strong>
+                <small>{{type}} · {{created_at}}</small>
+                {{#is_url}}<a href="{{reference}}" rel="nofollow noopener" target="_blank">{{reference}}</a>{{/is_url}}
+                {{#is_text}}<p>{{reference}}</p>{{/is_text}}
+                {{#has_file}}<a href="{{download_url}}">Baixar {{original_name}}</a>{{/has_file}}
+            </div>
+        {{/evidence}}
+        </div>
+    </section>
+    {{/has_evidence}}
+
+    {{#has_history}}
+    <section class="question-history">
+        <div class="eyebrow">HISTÓRICO</div>
+        <div class="admin-timeline">
+        {{#history}}
+            <div class="admin-timeline-item">
+                <strong>{{label}}</strong>
+                <span>{{status_change}}</span>
+                <p>{{details}}</p>
+                <small>{{actor}} · {{created_at}}</small>
+            </div>
+        {{/history}}
+        </div>
+    </section>
+    {{/has_history}}
+
+    {{#can_report}}
+    <details class="question-report">
+        <summary>Denunciar esta pergunta</summary>
+        <form method="post" action="{{report_url}}" class="admin-stack-form">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="question_id" value="{{id}}">
+            <label><span>Motivo</span>
+                <select name="reason" required>
+                    <option value="spam">Spam</option>
+                    <option value="offensive">Conteúdo ofensivo</option>
+                    <option value="illegal">Conteúdo ilegal</option>
+                    <option value="duplicate">Pergunta duplicada</option>
+                    <option value="other">Outro</option>
+                </select>
+            </label>
+            <label><span>Detalhes</span><textarea name="details" rows="3"></textarea></label>
+            <button class="button ghost small" type="submit">Enviar denúncia</button>
+        </form>
+    </details>
+    {{/can_report}}
 </article>
 {{>partials/site_footer}}
