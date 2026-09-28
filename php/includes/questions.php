@@ -36,7 +36,7 @@ function question_update_state(
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare('SELECT id,status,answer_text,published,waiting_since,answered_at FROM questions WHERE id=? AND deleted_at IS NULL FOR UPDATE');
+        $stmt = $pdo->prepare('SELECT id,status,answer_text,published,moderation_status,waiting_since,answered_at FROM questions WHERE id=? AND deleted_at IS NULL FOR UPDATE');
         $stmt->execute([$questionId]);
         $current = $stmt->fetch();
         if (!$current) {
@@ -60,7 +60,7 @@ function question_update_state(
 
         $takenBySql = 'taken_by';
         $takenAtSql = 'taken_at';
-        $params = [$status, $answer !== '' ? $answer : null, $published ? 1 : 0];
+        $params = [$status, $answer !== '' ? $answer : null, $published ? 1 : 0, $published ? 1 : 0];
 
         if ($status === 'taken' && $oldStatus !== 'taken') {
             $takenBySql = '?';
@@ -71,7 +71,7 @@ function question_update_state(
         $params[] = $questionId;
         $update = $pdo->prepare(
             "UPDATE questions
-             SET status=?,answer_text=?,published=?,waiting_since={$waitingSql},answered_at={$answeredSql},
+             SET status=?,answer_text=?,published=?,moderation_status=IF(?=1,'approved',moderation_status),waiting_since={$waitingSql},answered_at={$answeredSql},
                  taken_by={$takenBySql},taken_at={$takenAtSql}
              WHERE id=?"
         );
@@ -85,6 +85,10 @@ function question_update_state(
         if ($oldAnswer !== $answer) {
             question_history_add($questionId, $actorId, 'answer_updated', $oldStatus, $status, $answer === '' ? 'Resposta removida.' : 'Resposta atualizada.');
             audit_log($actorId, 'question.answer_updated', 'question', $questionId);
+        }
+        if ($published && (string)$current['moderation_status'] === 'pending') {
+            question_history_add($questionId, $actorId, 'moderation_approved', $oldStatus, $status, 'Aprovada ao publicar.');
+            audit_log($actorId, 'question.moderation_approved', 'question', $questionId, 'Aprovada ao publicar.');
         }
         if ($oldPublished !== $published) {
             question_history_add($questionId, $actorId, $published ? 'published' : 'hidden', $oldStatus, $status);
