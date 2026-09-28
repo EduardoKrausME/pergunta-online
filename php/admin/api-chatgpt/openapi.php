@@ -47,20 +47,88 @@ $questionSchema = [
 ];
 
 
+$blogSourceSchema = [
+    'type' => 'object',
+    'required' => ['url'],
+    'properties' => [
+        'title' => ['type' => 'string', 'maxLength' => 255],
+        'url' => ['type' => 'string', 'format' => 'uri'],
+    ],
+];
+
+$blogImageSchema = [
+    'type' => 'object',
+    'properties' => [
+        'url' => [
+            'type' => 'string',
+            'format' => 'uri',
+            'description' => 'Imagem remota que será baixada e armazenada localmente.',
+        ],
+        'alt' => ['type' => 'string', 'maxLength' => 255],
+        'credit' => ['type' => 'string', 'maxLength' => 255],
+        'source_url' => ['type' => 'string', 'format' => 'uri'],
+    ],
+];
+
 $blogPostSchema = [
     'type' => 'object',
     'required' => ['title', 'content'],
     'properties' => [
+        'external_id' => [
+            'type' => 'string',
+            'maxLength' => 190,
+            'description' => 'Identificador idempotente do sistema que envia o post.',
+        ],
+        'source_url' => [
+            'type' => 'string',
+            'format' => 'uri',
+            'description' => 'URL principal que originou o artigo.',
+        ],
         'title' => ['type' => 'string', 'minLength' => 3, 'maxLength' => 255],
         'slug' => ['type' => 'string', 'maxLength' => 190],
         'excerpt' => ['type' => 'string'],
         'content' => ['type' => 'string', 'minLength' => 1],
-        'published' => ['type' => 'boolean', 'default' => true],
+        'category' => ['type' => 'string', 'maxLength' => 120],
+        'tags' => [
+            'type' => 'array',
+            'maxItems' => 20,
+            'items' => ['type' => 'string', 'minLength' => 2, 'maxLength' => 120],
+        ],
+        'sources' => [
+            'type' => 'array',
+            'maxItems' => 20,
+            'items' => ['$ref' => '#/components/schemas/BlogSource'],
+        ],
+        'status' => [
+            'type' => 'string',
+            'enum' => ['draft', 'scheduled', 'published'],
+            'default' => 'published',
+        ],
+        'published' => [
+            'type' => 'boolean',
+            'description' => 'Compatibilidade com clientes antigos. Prefira status.',
+        ],
         'published_at' => ['type' => 'string', 'format' => 'date-time'],
+        'language' => ['type' => 'string', 'default' => 'pt_BR'],
+        'image' => ['$ref' => '#/components/schemas/BlogImage'],
         'image_url' => [
             'type' => 'string',
             'format' => 'uri',
-            'description' => 'Imagem remota que será baixada e salva em php/upload.',
+            'description' => 'Compatibilidade com clientes antigos. Prefira image.url.',
+        ],
+        'remove_image' => ['type' => 'boolean', 'default' => false],
+        'meta_title' => ['type' => 'string', 'maxLength' => 255],
+        'meta_description' => ['type' => 'string', 'maxLength' => 500],
+        'canonical_url' => ['type' => 'string', 'format' => 'uri'],
+        'update_existing' => [
+            'type' => 'boolean',
+            'default' => false,
+            'description' => 'Atualiza o post encontrado por external_id, source_url ou fallback de título.',
+        ],
+        'dry_run' => [
+            'type' => 'boolean',
+            'default' => false,
+            'description' => 'Valida dados e imagem sem persistir alterações.',
         ],
     ],
 ];
@@ -93,7 +161,7 @@ api_json([
     'openapi' => '3.1.0',
     'info' => [
         'title' => 'Pergunta.Online ChatGPT API',
-        'version' => '1.0.0',
+        'version' => '1.2.0',
         'description' => 'API para pesquisa assistida por ChatGPT e cadastro controlado de focos, categorias, destinatários, perguntas e evidências.',
     ],
     'servers' => [['url' => $server]],
@@ -108,6 +176,8 @@ api_json([
         'schemas' => [
             'Evidence' => $evidenceSchema,
             'Question' => $questionSchema,
+            'BlogSource' => $blogSourceSchema,
+            'BlogImage' => $blogImageSchema,
             'BlogPost' => $blogPostSchema,
         ],
     ],
@@ -156,7 +226,7 @@ api_json([
         '/blog' => [
             'post' => [
                 'operationId' => 'createBlogPosts',
-                'summary' => 'Cria posts do blog e baixa image_url para php/upload.',
+                'summary' => 'Cria ou atualiza posts idempotentes, baixa imagens, grava tags e fontes.',
                 'requestBody' => [
                     'required' => true,
                     'content' => [
@@ -171,7 +241,7 @@ api_json([
                     ],
                 ],
                 'responses' => [
-                    '200' => ['description' => 'Posts criados ou reutilizados'],
+                    '200' => ['description' => 'Posts criados, atualizados, reutilizados ou apenas validados'],
                     '422' => ['description' => 'Dados inválidos ou imagem recusada'],
                 ],
             ],
