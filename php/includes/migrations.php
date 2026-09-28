@@ -204,6 +204,7 @@ function run_schema_migrations(PDO $pdo): void {
     }
 
     if ($version < 3) {
+        $pdo->exec("UPDATE questions SET taken_at=updated_at WHERE status='taken' AND taken_at IS NULL");
         $pdo->exec("UPDATE questions SET waiting_since=NULL WHERE status NOT IN ('waiting','taken','answered')");
         migration_add_index($pdo, 'questions', 'idx_questions_updated', 'updated_at,created_at');
         migration_add_index($pdo, 'users', 'idx_users_created', 'created_at');
