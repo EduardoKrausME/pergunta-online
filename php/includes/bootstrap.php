@@ -6,7 +6,7 @@ require_once __DIR__ . '/request.php';
 require_once __DIR__ . '/migrations.php';
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
@@ -83,7 +83,7 @@ function base_url(string $path = ''): string {
     }
 
     $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-    $dir = preg_replace('~/admin$~', '', dirname($script));
+    $dir = preg_replace('~/(?:admin|blog)$~', '', dirname($script));
     $dir = $dir === '/' ? '' : rtrim($dir, '/');
 
     return $dir . '/' . ltrim($path, '/');

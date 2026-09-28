@@ -78,6 +78,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'registration_enabled' => !$installed || app_setting('registration_enabled', '1') === '1',
         'stylesheet_url' => base_url('assets/style.css') . '?v=' . APP_VERSION,
         'home_url' => base_url('/'),
+        'blog_url' => base_url('blog/'),
         'ask_url' => base_url('ask'),
         'responses_url' => base_url('responses'),
         'admin_url' => base_url('admin/'),

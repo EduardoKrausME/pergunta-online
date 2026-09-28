@@ -1,0 +1,40 @@
+{{>partials/site_header}}
+<section class="blog-hero">
+    <div>
+        <div class="eyebrow">BLOG</div>
+        <h1>Contexto que<br>não cabe na pergunta.</h1>
+    </div>
+    <p>Artigos, análises e explicações para aprofundar os assuntos que aparecem no Pergunta.Online sem transformar a página principal em um jornal infinito.</p>
+</section>
+
+<div class="section-head">
+    <div>
+        <h2>Publicações</h2>
+        <div class="muted">{{post_count}} artigo(s)</div>
+    </div>
+</div>
+
+<div class="blog-grid">
+{{#posts}}
+<article class="blog-card">
+    {{#has_cover}}<a class="blog-card-cover" href="{{url}}"><img src="{{cover_image_url}}" alt="" loading="lazy"></a>{{/has_cover}}
+    <div class="blog-card-body">
+        <time>{{published_date}}</time>
+        <h2><a href="{{url}}">{{title}}</a></h2>
+        <p>{{excerpt}}</p>
+        <a class="blog-card-link" href="{{url}}">Ler artigo →</a>
+    </div>
+</article>
+{{/posts}}
+</div>
+
+{{^posts}}<div class="empty">Ainda não há artigos publicados.</div>{{/posts}}
+
+{{#show_pagination}}
+<nav class="blog-pagination" aria-label="Paginação do blog">
+    {{#has_previous}}<a class="button ghost small" href="{{previous_url}}">← Anterior</a>{{/has_previous}}
+    <span>Página {{page}} de {{total_pages}}</span>
+    {{#has_next}}<a class="button ghost small" href="{{next_url}}">Próxima →</a>{{/has_next}}
+</nav>
+{{/show_pagination}}
+{{>partials/site_footer}}

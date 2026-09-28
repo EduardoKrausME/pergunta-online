@@ -1,0 +1,21 @@
+{{>partials/site_header}}
+<article class="blog-post">
+    <a class="blog-post-back" href="{{blog_url}}">← Voltar ao blog</a>
+
+    <header class="blog-post-header">
+        <div class="eyebrow">BLOG</div>
+        <h1>{{title}}</h1>
+        <div class="blog-post-meta">{{published_date}}{{#has_author}} · por {{author_name}}{{/has_author}}</div>
+        {{#excerpt}}<p class="lead">{{excerpt}}</p>{{/excerpt}}
+    </header>
+
+    {{#has_cover}}<div class="blog-post-cover"><img src="{{cover_image_url}}" alt="" loading="eager"></div>{{/has_cover}}
+
+    <div class="blog-post-content">{{{content_html}}}</div>
+
+    <footer class="blog-post-footer">
+        <span>Publicado no Blog do {{site_name}}</span>
+        <a class="button ghost small" href="{{blog_url}}">Ver outras publicações</a>
+    </footer>
+</article>
+{{>partials/site_footer}}
