@@ -10,6 +10,10 @@ if (!app_installed()) {
 if (current_user()) {
     redirect('index.php');
 }
+if (app_setting('registration_enabled', '1') !== '1') {
+    flash('warning', 'O cadastro público está desativado.');
+    redirect('login.php');
+}
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
