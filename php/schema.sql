@@ -159,17 +159,51 @@ CREATE TABLE IF NOT EXISTS question_reports (
 CREATE TABLE IF NOT EXISTS blog_posts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     author_user_id BIGINT UNSIGNED NULL,
+    external_id VARCHAR(190) NULL,
+    source_url VARCHAR(1000) NULL,
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(190) NOT NULL UNIQUE,
     excerpt TEXT NULL,
+    category VARCHAR(120) NULL,
     content LONGTEXT NOT NULL,
     cover_image_url VARCHAR(500) NULL,
+    cover_image_alt VARCHAR(255) NULL,
+    cover_image_credit VARCHAR(255) NULL,
+    cover_image_source_url VARCHAR(1000) NULL,
     published TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('draft','scheduled','published') NOT NULL DEFAULT 'draft',
     published_at DATETIME NULL,
+    language VARCHAR(20) NOT NULL DEFAULT 'pt_BR',
+    meta_title VARCHAR(255) NULL,
+    meta_description VARCHAR(500) NULL,
+    canonical_url VARCHAR(1000) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_blog_posts_external_id (external_id),
     INDEX idx_blog_posts_public (published,published_at,created_at),
+    INDEX idx_blog_posts_status (status,published_at,created_at),
+    INDEX idx_blog_posts_category (category),
     CONSTRAINT fk_blog_posts_author FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_post_tags (
+    post_id BIGINT UNSIGNED NOT NULL,
+    tag VARCHAR(120) NOT NULL,
+    tag_slug VARCHAR(120) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id,tag_slug),
+    INDEX idx_blog_post_tags_slug (tag_slug),
+    CONSTRAINT fk_blog_post_tags_post FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_post_sources (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    post_id BIGINT UNSIGNED NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    url VARCHAR(1000) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_blog_post_sources_post (post_id,created_at),
+    CONSTRAINT fk_blog_post_sources_post FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admin_audit_log (
@@ -204,7 +238,7 @@ INSERT IGNORE INTO app_settings (setting_key,setting_value) VALUES
 ('site_name','Pergunta.Online'),
 ('max_questions_per_page','50');
 
-INSERT INTO app_meta (meta_key,meta_value) VALUES ('schema_version','4')
+INSERT INTO app_meta (meta_key,meta_value) VALUES ('schema_version','5')
 ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value);
 
 CREATE TABLE IF NOT EXISTS login_attempts (
