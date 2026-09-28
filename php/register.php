@@ -14,10 +14,10 @@ if (current_user()) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $name = trim((string)($_POST['name'] ?? ''));
-    $email = normalize_email((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
-    $confirm = (string)($_POST['confirm_password'] ?? '');
+    $name = trim((string)Request::post('name', Request::STRING, ''));
+    $email = normalize_email((string)Request::post('email', Request::STRING, ''));
+    $password = (string)Request::post('password', Request::STRING, '');
+    $confirm = (string)Request::post('confirm_password', Request::STRING, '');
     if (strlen($name) < 2) {
         $error = 'Informe seu nome.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -42,6 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 render_page('register', [
     'error' => $error,
-    'name' => (string)($_POST['name'] ?? ''),
-    'email' => (string)($_POST['email'] ?? ''),
+    'name' => (string)Request::post('name', Request::STRING, ''),
+    'email' => (string)Request::post('email', Request::STRING, ''),
 ], 'Criar conta');
