@@ -1,0 +1,51 @@
+name: PHP validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: pergunta_online
+          MYSQL_USER: pergunta_online
+          MYSQL_PASSWORD: troque-esta-senha
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_mysql, fileinfo
+
+      - name: Lint PHP
+        run: find php -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Import schema
+        env:
+          MYSQL_PWD: troque-esta-senha
+        run: mysql -h 127.0.0.1 -u pergunta_online pergunta_online < php/schema.sql
+
+      - name: Smoke bootstrap
+        run: php -r "require 'php/includes/bootstrap.php'; if (!app_installed()) { exit(1); } echo 'bootstrap ok', PHP_EOL;"
+
+      - name: Render smoke template
+        run: php -r "require 'php/includes/layout.php'; echo template_renderer()->render('not_found', []);"
