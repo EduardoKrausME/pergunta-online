@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check = db()->prepare('SELECT id FROM questions WHERE id=? AND id<>? AND deleted_at IS NULL');
         $check->execute([$duplicateOf, $id]);
         if ($check->fetch()) {
-            $stmt = db()->prepare("UPDATE questions SET duplicate_of=?,status='archived',published=0 WHERE id=?");
+            $stmt = db()->prepare("UPDATE questions SET duplicate_of=?,status='archived' WHERE id=?");
             $stmt->execute([$duplicateOf, $id]);
             question_history_add($id, (int)$admin['id'], 'marked_duplicate', (string)$question['status'], 'archived', 'question:' . $duplicateOf);
             audit_log((int)$admin['id'], 'question.marked_duplicate', 'question', $id, 'question:' . $duplicateOf);
