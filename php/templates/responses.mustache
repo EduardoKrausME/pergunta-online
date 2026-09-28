@@ -1,0 +1,40 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">PAUTAS</div>
+        <h1>Perguntas para responder</h1>
+        <p class="muted">{{count}} pergunta(s) vinculadas aos destinatários que esta conta representa.</p>
+    </div>
+</section>
+
+<div class="tabs admin-tabs">
+{{#filters}}<a class="tab {{active_class}}" href="{{url}}">{{label}}</a>{{/filters}}
+</div>
+
+<div class="admin-question-list">
+{{#questions}}
+<section class="panel">
+    <div class="admin-badge-row">
+        <span class="status {{status_class}}">{{status_label}}</span>
+        <span class="admin-badge">{{focus_name}}</span>
+        <span class="admin-badge">{{category}}</span>
+        <span class="admin-badge">Para {{target_name}}</span>
+    </div>
+    <h2>{{title}}</h2>
+    <div class="admin-question-meta">
+        Por {{author_name}} · {{votes}} endosso(s)
+        {{#has_waiting}} · {{waiting_days}} dias de silêncio{{/has_waiting}}
+        {{#has_owner}} · assumida por {{taken_by_name}}{{/has_owner}}
+    </div>
+    <div class="admin-card-actions admin-recent-panel">
+        <a class="button ghost small" href="{{question_url}}">Ver pergunta</a>
+        <a class="button primary small" href="{{respond_url}}">Abrir pauta</a>
+    </div>
+</section>
+{{/questions}}
+</div>
+
+{{^has_questions}}<div class="empty">Nenhuma pergunta neste filtro.</div>{{/has_questions}}
+
+{{>partials/site_footer}}
