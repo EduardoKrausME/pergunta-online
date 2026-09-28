@@ -6,7 +6,7 @@ require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
     redirect('install.php');
 }
-require_admin();
+$admin = require_admin();
 
 $statusOptions = [
     'open' => 'Aberta',
@@ -38,20 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)Request::post('question_id', Request::INT, 0);
     $status = (string)Request::post('status', Request::STRING, '');
     $answer = trim((string)Request::post('answer_text', Request::STRING, ''));
-    $published = Request::post('published', Request::BOOL, false) ? 1 : 0;
+    $published = (bool)Request::post('published', Request::BOOL, false);
 
-    if (array_key_exists($status, $statusOptions)) {
-        $waiting = $status === 'waiting' ? 'COALESCE(waiting_since,NOW())' : 'waiting_since';
-        $answered = $status === 'answered' ? 'COALESCE(answered_at,NOW())' : 'answered_at';
-        $sql = "UPDATE questions SET status=?,answer_text=?,published=?,waiting_since={$waiting},answered_at={$answered} WHERE id=?";
-        $stmt = db()->prepare($sql);
-        $stmt->execute([$status, $answer !== '' ? $answer : null, $published, $id]);
-        flash('success', 'Pergunta atualizada.');
+    try {
+        if (question_update_state($id, $admin, $status, $answer, $published)) {
+            flash('success', 'Pergunta atualizada e alteração registrada no histórico.');
+        } else {
+            flash('error', 'Pergunta não encontrada ou estado inválido.');
+        }
+    } catch (InvalidArgumentException $e) {
+        flash('error', $e->getMessage());
     }
     redirect('admin/questions.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
 }
 
-$where = [];
+$where = ['q.deleted_at IS NULL'];
 $params = [];
 
 if ($q !== '') {
@@ -74,10 +75,7 @@ $sql = "
            (SELECT COUNT(*) FROM question_votes v WHERE v.question_id = q.id) AS votes
     FROM questions q
     JOIN users u ON u.id = q.user_id
-";
-if ($where !== []) {
-    $sql .= ' WHERE ' . implode(' AND ', $where);
-}
+    WHERE " . implode(' AND ', $where);
 $sql .= ' ORDER BY q.updated_at DESC, q.created_at DESC LIMIT 100';
 
 $stmt = db()->prepare($sql);
@@ -91,6 +89,7 @@ $summaryRow = db()->query("
         SUM(status = 'answered') AS answered_count,
         SUM(published = 0) AS hidden_count
     FROM questions
+    WHERE deleted_at IS NULL
 ")->fetch();
 
 $summary = [
@@ -111,7 +110,7 @@ foreach ($rows as $question) {
         ];
     }
 
-    $hasWaiting = !empty($question['waiting_since']);
+    $hasWaiting = in_array($question['status'], ['waiting', 'answered'], true) && !empty($question['waiting_since']);
     $waitingDays = 0;
     if ($hasWaiting) {
         $silenceEnd = $question['status'] === 'answered' && !empty($question['answered_at'])
