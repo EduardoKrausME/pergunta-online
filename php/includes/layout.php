@@ -17,6 +17,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
     $installed = app_installed();
     $user = $installed ? current_user() : null;
     $isAdmin = ($user['role'] ?? '') === 'admin';
+    $isRespondent = ($user['role'] ?? '') === 'respondent';
     $siteName = $installed ? app_setting('site_name', APP_NAME) : APP_NAME;
     $flashes = array_map(static fn(array $flash): array => [
         'type' => (string)($flash['type'] ?? 'info'),
@@ -30,6 +31,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'stylesheet_url' => base_url('assets/style.css') . '?v=' . APP_VERSION,
         'home_url' => base_url('index.php'),
         'ask_url' => base_url('ask.php'),
+        'responses_url' => base_url('responses.php'),
         'admin_url' => base_url('admin/index.php'),
         'logout_url' => base_url('logout.php'),
         'login_url' => base_url('login.php'),
@@ -47,6 +49,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'logged_in' => $user !== null,
         'logged_out' => $user === null,
         'user_is_admin' => $isAdmin,
+        'user_is_respondent' => $isRespondent,
         'user_name' => (string)($user['name'] ?? ''),
         'show_admin_bar' => $admin,
         'flashes' => $flashes,
