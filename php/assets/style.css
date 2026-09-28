@@ -187,4 +187,19 @@ body.admin-layout{
         margin-left:2px;
     }
 }
+.admin-stat-card-link,
+.admin-attention-card{
+    transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
+}
+.admin-stat-card-link:hover,
+.admin-attention-card:hover{
+    transform:translateY(-1px);
+    box-shadow:var(--shadow);
+    border-color:#c8c2b5;
+}
+.admin-stat-card-link:focus-visible,
+.admin-attention-card:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+}
 
