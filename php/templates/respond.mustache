@@ -1,0 +1,37 @@
+{{>partials/site_header}}
+
+<section class="form-page">
+    <div class="eyebrow">RESPOSTA OFICIAL</div>
+    <h1>{{title}}</h1>
+    <p class="muted">{{body}}</p>
+    <div class="admin-badge-row">
+        <span class="admin-badge">Para {{target_name}}</span>
+        <span class="status">{{status_label}}</span>
+    </div>
+
+    <div class="admin-dashboard-grid admin-recent-panel">
+        <section class="panel">
+            <div class="panel-head compact"><div><h2>Assumir pauta</h2></div></div>
+            <p class="muted">Registra publicamente que uma conta autorizada assumiu a responsabilidade de responder.</p>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                <input type="hidden" name="action" value="take">
+                <button class="button ghost" type="submit">Assumir pauta</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head compact"><div><h2>Registrar resposta</h2></div></div>
+            <form method="post" class="admin-stack-form">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                <input type="hidden" name="action" value="answer">
+                <label><span>Resposta oficial</span><textarea name="answer_text" rows="10" required>{{answer_text}}</textarea></label>
+                <button class="button primary" type="submit">Registrar resposta</button>
+            </form>
+        </section>
+    </div>
+
+    <a class="button ghost" href="{{question_url}}">Voltar à pergunta</a>
+</section>
+
+{{>partials/site_footer}}
