@@ -220,9 +220,6 @@ function blog_sanitize_html(string $html): string {
             if ($child instanceof DOMElement) {
                 $tag = strtolower($child->tagName);
                 if (!in_array($tag, $allowedTags, true)) {
-                    while ($child->firstChild) {
-                        $node->insertBefore($child->firstChild, $child);
-                    }
                     $node->removeChild($child);
                     $child = $next;
                     continue;

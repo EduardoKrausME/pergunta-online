@@ -253,6 +253,13 @@ function api_blog_create(array $input, array $actor): array {
     if ($existing) {
         $root = rtrim(api_root_url(), '/');
         $coverPath = trim((string)($existing['cover_image_url'] ?? ''));
+        $coverUrl = $root . '/assets/post-sem-image.jpg';
+        if ($coverPath !== '') {
+            $coverUrl = preg_match('~^https?://~i', $coverPath)
+                ? $coverPath
+                : $root . '/' . ltrim($coverPath, '/');
+        }
+
         return [
             'id' => (int)$existing['id'],
             'created' => false,
@@ -260,9 +267,7 @@ function api_blog_create(array $input, array $actor): array {
             'slug' => (string)$existing['slug'],
             'published' => (int)$existing['published'] === 1,
             'published_at' => $existing['published_at'],
-            'cover_image_url' => $coverPath !== ''
-                ? $root . '/' . ltrim($coverPath, '/')
-                : $root . '/assets/post-sem-image.jpg',
+            'cover_image_url' => $coverUrl,
             'url' => $root . '/blog/' . rawurlencode((string)$existing['slug']),
         ];
     }
