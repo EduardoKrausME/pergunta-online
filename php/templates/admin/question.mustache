@@ -125,6 +125,14 @@
 <section class="panel admin-danger-panel">
     <div class="panel-head compact"><div><div class="eyebrow">MODERAÇÃO AVANÇADA</div><h2>Duplicidade e exclusão</h2></div></div>
 
+    {{#question.duplicate}}
+    <form method="post" class="admin-card-actions">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="unmark_duplicate">
+        <button class="button ghost small" type="submit">Remover marca de duplicada</button>
+    </form>
+    {{/question.duplicate}}
+
     {{#has_duplicates}}
     <form method="post" class="admin-inline-form">
         <input type="hidden" name="csrf_token" value="{{csrf_token}}">
