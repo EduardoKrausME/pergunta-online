@@ -6,8 +6,8 @@ if (!app_installed()) redirect('install.php');
 $user=require_login();
 if($_SERVER['REQUEST_METHOD']!=='POST'){redirect('index.php');}
 require_csrf();
-$id=(int)($_POST['question_id']??0);
-$action=(string)($_POST['action']??'');
+$id=Request::post('question_id',Request::INT,0);
+$action=Request::post('action',Request::STRING,'');
 $stmt=db()->prepare('SELECT id FROM questions WHERE id=? AND published=1 LIMIT 1');$stmt->execute([$id]);if(!$stmt->fetch()){flash('error','Pergunta não encontrada.');redirect('index.php');}
 $table=$action==='vote'?'question_votes':($action==='save'?'question_saves':'');
 if($table===''){redirect('index.php');}
