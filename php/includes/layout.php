@@ -42,7 +42,6 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'moderation' => 0,
         'reports' => 0,
         'history' => 0,
-        'settings' => 0,
     ];
     if ($admin && $installed) {
         $adminCountsRow = db()->query("
@@ -58,8 +57,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
                     WHERE moderation_status = 'pending' AND deleted_at IS NULL
                 ) AS moderation,
                 (SELECT COUNT(*) FROM question_reports WHERE status = 'pending') AS reports,
-                (SELECT COUNT(*) FROM admin_audit_log) AS history,
-                (SELECT COUNT(*) FROM app_settings) AS settings
+                (SELECT COUNT(*) FROM admin_audit_log) AS history
         ")->fetch();
 
         if (is_array($adminCountsRow)) {
@@ -120,7 +118,6 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'admin_count_moderation' => $adminCounts['moderation'],
         'admin_count_reports' => $adminCounts['reports'],
         'admin_count_history' => $adminCounts['history'],
-        'admin_count_settings' => $adminCounts['settings'],
         'flashes' => $flashes,
         'csrf_token' => csrf_token(),
         'year' => date('Y'),
