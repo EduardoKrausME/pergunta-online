@@ -32,6 +32,43 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'settings.php' => 'settings',
         default => 'summary',
     };
+
+    $adminCounts = [
+        'questions' => 0,
+        'users' => 0,
+        'focuses' => 0,
+        'categories' => 0,
+        'targets' => 0,
+        'moderation' => 0,
+        'reports' => 0,
+        'history' => 0,
+        'settings' => 0,
+    ];
+    if ($admin && $installed) {
+        $adminCountsRow = db()->query("
+            SELECT
+                (SELECT COUNT(*) FROM questions WHERE deleted_at IS NULL) AS questions,
+                (SELECT COUNT(*) FROM users) AS users,
+                (SELECT COUNT(*) FROM focuses) AS focuses,
+                (SELECT COUNT(*) FROM categories) AS categories,
+                (SELECT COUNT(*) FROM targets) AS targets,
+                (
+                    SELECT COUNT(*)
+                    FROM questions
+                    WHERE moderation_status = 'pending' AND deleted_at IS NULL
+                ) AS moderation,
+                (SELECT COUNT(*) FROM question_reports WHERE status = 'pending') AS reports,
+                (SELECT COUNT(*) FROM admin_audit_log) AS history,
+                (SELECT COUNT(*) FROM app_settings) AS settings
+        ")->fetch();
+
+        if (is_array($adminCountsRow)) {
+            foreach ($adminCounts as $key => $value) {
+                $adminCounts[$key] = (int)($adminCountsRow[$key] ?? 0);
+            }
+        }
+    }
+
     $flashes = array_map(static fn(array $flash): array => [
         'type' => (string)($flash['type'] ?? 'info'),
         'message' => (string)($flash['message'] ?? ''),
@@ -75,6 +112,15 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'admin_nav_reports' => $admin && $adminSection === 'reports',
         'admin_nav_history' => $admin && $adminSection === 'history',
         'admin_nav_settings' => $admin && $adminSection === 'settings',
+        'admin_count_questions' => $adminCounts['questions'],
+        'admin_count_users' => $adminCounts['users'],
+        'admin_count_focuses' => $adminCounts['focuses'],
+        'admin_count_categories' => $adminCounts['categories'],
+        'admin_count_targets' => $adminCounts['targets'],
+        'admin_count_moderation' => $adminCounts['moderation'],
+        'admin_count_reports' => $adminCounts['reports'],
+        'admin_count_history' => $adminCounts['history'],
+        'admin_count_settings' => $adminCounts['settings'],
         'flashes' => $flashes,
         'csrf_token' => csrf_token(),
         'year' => date('Y'),
