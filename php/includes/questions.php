@@ -127,6 +127,8 @@ function question_event_label(string $eventType): string {
         'moderation_approved' => 'Moderação aprovada',
         'moderation_rejected' => 'Moderação rejeitada',
         'respondent_assigned' => 'Respondente atribuído',
+        'respondent_unassigned' => 'Respondente removido',
+        'duplicate_removed' => 'Marca de duplicidade removida',
         default => ucfirst(str_replace('_', ' ', $eventType)),
     };
 }
