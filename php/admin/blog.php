@@ -24,8 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($published === 1 && empty($publishedAt)) {
                 $publishedAt = date('Y-m-d H:i:s');
             }
-            $update = db()->prepare('UPDATE blog_posts SET published=?,published_at=? WHERE id=?');
-            $update->execute([$published, $publishedAt, $id]);
+            $status = $published === 0
+                ? 'draft'
+                : ($publishedAt !== null && strtotime((string)$publishedAt) > time() ? 'scheduled' : 'published');
+            $update = db()->prepare('UPDATE blog_posts SET published=?,status=?,published_at=? WHERE id=?');
+            $update->execute([$published, $status, $publishedAt, $id]);
             audit_log((int)$admin['id'], 'blog.published_changed', 'blog_post', $id, $published ? 'published' : 'draft');
             flash('success', $published ? 'Artigo publicado.' : 'Artigo retirado de publicação.');
         }
