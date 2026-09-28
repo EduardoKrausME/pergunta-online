@@ -8,7 +8,7 @@ if (!app_installed()) {
 }
 $user = require_login();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('index.php');
+    redirect('/');
 }
 require_csrf();
 
@@ -22,7 +22,7 @@ $stmt->execute([$id]);
 $question = $stmt->fetch();
 if (!$question || !in_array($reason, $allowed, true)) {
     flash('error', 'Não foi possível registrar a denúncia.');
-    redirect('index.php');
+    redirect('/');
 }
 
 $upsert = db()->prepare("
