@@ -1,0 +1,34 @@
+{{>partials/site_header}}
+
+<section class="admin-head">
+    <div class="eyebrow">CONFIGURAÇÕES</div>
+    <h1>Comportamento da plataforma</h1>
+    <p class="muted">Controle os pontos que afetam operação e moderação sem precisar alterar o código.</p>
+</section>
+
+<section class="panel admin-settings-panel">
+    <form method="post" class="admin-stack-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <label><span>Nome do site</span><input name="site_name" value="{{site_name}}" maxlength="100" required></label>
+
+        <div class="admin-settings-grid">
+            <label class="admin-setting-toggle">
+                <span><strong>Cadastro público</strong><small>Permite que visitantes criem novas contas.</small></span>
+                <input type="checkbox" name="registration_enabled" value="1" {{#registration_enabled}}checked{{/registration_enabled}}>
+            </label>
+            <label class="admin-setting-toggle">
+                <span><strong>Publicação automática</strong><small>Se desligada, perguntas novas ficam na fila de moderação.</small></span>
+                <input type="checkbox" name="auto_publish_questions" value="1" {{#auto_publish_questions}}checked{{/auto_publish_questions}}>
+            </label>
+        </div>
+
+        <div class="admin-inline-form">
+            <label><span>Dias para destacar silêncio</span><input type="number" name="silence_threshold_days" min="1" max="365" value="{{silence_threshold_days}}"></label>
+            <label><span>Perguntas por página</span><input type="number" name="max_questions_per_page" min="10" max="100" value="{{max_questions_per_page}}"></label>
+        </div>
+
+        <button class="button primary" type="submit">Salvar configurações</button>
+    </form>
+</section>
+
+{{>partials/site_footer}}
