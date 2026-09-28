@@ -49,8 +49,12 @@ function question_update_state(
         $oldPublished = (int)$current['published'] === 1;
 
         $waitingSql = 'waiting_since';
-        if ($status === 'waiting' && $oldStatus !== 'waiting') {
-            $waitingSql = 'NOW()';
+        if ($status === 'waiting') {
+            $waitingSql = $oldStatus === 'waiting' ? 'waiting_since' : 'NOW()';
+        } elseif ($status === 'taken' || $status === 'answered') {
+            $waitingSql = in_array($oldStatus, ['waiting', 'taken'], true) ? 'waiting_since' : 'NULL';
+        } else {
+            $waitingSql = 'NULL';
         }
 
         $answeredSql = 'answered_at';
