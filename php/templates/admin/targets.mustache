@@ -1,0 +1,100 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">DESTINATÁRIOS</div>
+        <h1>Quem deve responder</h1>
+        <p class="muted">Cadastre organizações, áreas ou pessoas e vincule contas respondentes autorizadas a falar em nome delas.</p>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head compact"><div><h2>Novo destinatário</h2></div></div>
+    <form method="post" class="admin-stack-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="save">
+        <div class="admin-inline-form">
+            <label><span>Nome</span><input name="name" required maxlength="190"></label>
+            <label><span>Site</span><input type="url" name="website" maxlength="500"></label>
+            <label><span>E-mail de contato</span><input type="email" name="contact_email" maxlength="190"></label>
+        </div>
+        <label><span>Descrição</span><textarea name="description" rows="3"></textarea></label>
+        <button class="button primary" type="submit">Adicionar destinatário</button>
+    </form>
+</section>
+
+<div class="admin-question-list admin-recent-panel">
+{{#targets}}
+<section class="panel">
+    <div class="panel-head compact">
+        <div>
+            <div class="admin-badge-row">
+                <span class="admin-badge state-{{status_class}}">{{status}}</span>
+                <span class="admin-badge">{{question_count}} pergunta(s)</span>
+            </div>
+            <h2>{{name}}</h2>
+        </div>
+    </div>
+
+    <form method="post" class="admin-stack-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="id" value="{{id}}">
+        <div class="admin-inline-form">
+            <label><span>Nome</span><input name="name" value="{{name}}" required maxlength="190"></label>
+            <label><span>Site</span><input type="url" name="website" value="{{website}}" maxlength="500"></label>
+            <label><span>E-mail</span><input type="email" name="contact_email" value="{{contact_email}}" maxlength="190"></label>
+        </div>
+        <label><span>Descrição</span><textarea name="description" rows="3">{{description}}</textarea></label>
+        <button class="button ghost small" type="submit">Salvar dados</button>
+    </form>
+
+    <div class="admin-subsection">
+        <strong>Respondentes autorizados</strong>
+        {{#has_respondents}}
+        <div class="admin-simple-list">
+            {{#respondents}}
+            <div class="admin-list-row">
+                <span><strong>{{name}}</strong><small>{{email}}</small></span>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                    <input type="hidden" name="action" value="remove_user">
+                    <input type="hidden" name="id" value="{{id}}">
+                    <input type="hidden" name="user_id" value="{{user_id}}">
+                    <button class="button ghost small" type="submit">Remover vínculo</button>
+                </form>
+            </div>
+            {{/respondents}}
+        </div>
+        {{/has_respondents}}
+        {{^has_respondents}}<p class="muted">Nenhum respondente vinculado.</p>{{/has_respondents}}
+
+        {{#has_available_respondents}}
+        <form method="post" class="admin-inline-form">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="action" value="assign_user">
+            <input type="hidden" name="id" value="{{id}}">
+            <label><span>Vincular conta</span>
+                <select name="user_id" required>
+                    {{#respondent_options}}<option value="{{id}}">{{label}}</option>{{/respondent_options}}
+                </select>
+            </label>
+            <button class="button ghost small" type="submit">Vincular</button>
+        </form>
+        {{/has_available_respondents}}
+    </div>
+
+    <form method="post" class="admin-card-actions">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="set_active">
+        <input type="hidden" name="id" value="{{id}}">
+        {{#activate}}<input type="hidden" name="active" value="1"><button class="button ghost small" type="submit">Ativar destinatário</button>{{/activate}}
+        {{^activate}}<input type="hidden" name="active" value="0"><button class="button ghost small" type="submit">Desativar destinatário</button>{{/activate}}
+    </form>
+</section>
+{{/targets}}
+</div>
+
+{{^has_targets}}<div class="empty">Nenhum destinatário cadastrado.</div>{{/has_targets}}
+
+{{>partials/site_footer}}
