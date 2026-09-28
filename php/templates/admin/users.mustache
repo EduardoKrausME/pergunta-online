@@ -1,41 +1,102 @@
 {{>partials/site_header}}
-<section class="admin-head">
-    <div><div class="eyebrow">USUÁRIOS</div><h1>Contas e permissões</h1><p class="muted">Ative, desative e promova usuários. Autocadastro sempre cria perfil comum.</p></div>
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">USUÁRIOS</div>
+        <h1>Contas e permissões</h1>
+        <p class="muted">Pesquise contas, controle acesso e mantenha permissões administrativas visíveis.</p>
+    </div>
 </section>
-<section class="panel">
+
+<div class="admin-summary-strip">
+{{#summary}}
+    <div><strong>{{value}}</strong><span>{{label}}</span></div>
+{{/summary}}
+</div>
+
+<form method="get" class="admin-filterbar admin-filterbar-users">
+    <label class="admin-search-field">
+        <span>Buscar</span>
+        <input type="search" name="q" value="{{search_query}}" placeholder="Nome ou e-mail">
+    </label>
+
+    <label>
+        <span>Perfil</span>
+        <select name="role">
+            {{#role_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/role_filters}}
+        </select>
+    </label>
+
+    <label>
+        <span>Status</span>
+        <select name="state">
+            {{#state_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/state_filters}}
+        </select>
+    </label>
+
+    <div class="admin-filter-actions">
+        <button class="button primary" type="submit">Filtrar</button>
+        {{#has_filters}}<a class="button ghost" href="{{admin_users_url}}">Limpar</a>{{/has_filters}}
+    </div>
+</form>
+
+<div class="admin-result-line">
+    <strong>{{result_count}}</strong> usuário(s) exibido(s)
+    <span>Máximo de 200 por consulta.</span>
+</div>
+
+<section class="panel admin-users-panel">
     <div class="table-wrap">
-        <table>
-            <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
+        <table class="admin-table admin-users-table">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Perfil</th>
+                    <th>Status</th>
+                    <th>Cadastro</th>
+                    <th>Atualização</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
             <tbody>
             {{#users}}
-            <tr>
-                <td><strong>{{name}}</strong><br><span class="muted">{{email}}</span></td>
-                <td>{{role}}</td>
-                <td>{{status}}</td>
-                <td>{{created_at}}</td>
-                <td>
-                    {{#can_manage}}
-                    <div class="inline-actions">
-                        <form method="post">
-                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-                            <input type="hidden" name="user_id" value="{{id}}">
-                            <input type="hidden" name="action" value="toggle_role">
-                            <button class="button ghost small" type="submit">{{role_action_label}}</button>
-                        </form>
-                        <form method="post">
-                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-                            <input type="hidden" name="user_id" value="{{id}}">
-                            <input type="hidden" name="action" value="toggle_active">
-                            <button class="button ghost small" type="submit">{{active_action_label}}</button>
-                        </form>
-                    </div>
-                    {{/can_manage}}
-                    {{^can_manage}}<span class="muted">Sua conta</span>{{/can_manage}}
-                </td>
-            </tr>
+                <tr>
+                    <td>
+                        <strong class="admin-table-title">{{name}}</strong>
+                        <span class="admin-table-sub">{{email}}</span>
+                    </td>
+                    <td><span class="admin-badge role-{{role_class}}">{{role_label}}</span></td>
+                    <td><span class="admin-badge state-{{status_class}}">{{status}}</span></td>
+                    <td>{{created_at}}</td>
+                    <td>{{updated_at}}</td>
+                    <td>
+                        {{#can_manage}}
+                        <div class="inline-actions">
+                            <form method="post">
+                                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                                <input type="hidden" name="user_id" value="{{id}}">
+                                <input type="hidden" name="action" value="toggle_role">
+                                <button class="button ghost small" type="submit">{{role_action_label}}</button>
+                            </form>
+                            <form method="post">
+                                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                                <input type="hidden" name="user_id" value="{{id}}">
+                                <input type="hidden" name="action" value="toggle_active">
+                                <button class="button ghost small" type="submit">{{active_action_label}}</button>
+                            </form>
+                        </div>
+                        {{/can_manage}}
+                        {{^can_manage}}<span class="admin-self-label">Sua conta</span>{{/can_manage}}
+                    </td>
+                </tr>
             {{/users}}
             </tbody>
         </table>
     </div>
 </section>
+
+{{^users}}
+<div class="empty">Nenhum usuário encontrado com esses filtros.</div>
+{{/users}}
+
 {{>partials/site_footer}}

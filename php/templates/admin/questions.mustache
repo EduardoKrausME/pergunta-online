@@ -1,31 +1,126 @@
 {{>partials/site_header}}
-<section class="admin-head">
-    <div><div class="eyebrow">PERGUNTAS</div><h1>Moderação e respostas</h1><p class="muted">Mude o estágio, registre uma resposta e controle o cronômetro do silêncio.</p></div>
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">PERGUNTAS</div>
+        <h1>Moderação e respostas</h1>
+        <p class="muted">Encontre o que precisa de atenção, mude o estágio e registre o fechamento do ciclo.</p>
+    </div>
+    <a class="button ghost" href="{{home_url}}">Ver site público</a>
 </section>
+
+<div class="admin-summary-strip">
+{{#summary}}
+    <div><strong>{{value}}</strong><span>{{label}}</span></div>
+{{/summary}}
+</div>
+
+<form method="get" class="admin-filterbar">
+    <label class="admin-search-field">
+        <span>Buscar</span>
+        <input type="search" name="q" value="{{search_query}}" placeholder="Pergunta, foco, assunto, destinatário ou autor">
+    </label>
+
+    <label>
+        <span>Estado</span>
+        <select name="status">
+            {{#status_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/status_filters}}
+        </select>
+    </label>
+
+    <label>
+        <span>Publicação</span>
+        <select name="visibility">
+            {{#visibility_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/visibility_filters}}
+        </select>
+    </label>
+
+    <div class="admin-filter-actions">
+        <button class="button primary" type="submit">Filtrar</button>
+        {{#has_filters}}<a class="button ghost" href="{{admin_questions_url}}">Limpar</a>{{/has_filters}}
+    </div>
+</form>
+
+<div class="admin-result-line">
+    <strong>{{result_count}}</strong> pergunta(s) exibida(s)
+    <span>Máximo de 100 por consulta.</span>
+</div>
+
 <div class="admin-question-list">
 {{#questions}}
-<form method="post" class="panel question-admin">
+<form method="post" class="admin-question-card">
     <input type="hidden" name="csrf_token" value="{{csrf_token}}">
     <input type="hidden" name="question_id" value="{{id}}">
-    <div class="panel-head">
-        <div>
-            <span class="category">{{focus_name}} · {{category}}</span>
-            <h2>{{title}}</h2>
-            <div class="muted">por {{author_name}} · {{votes}} endosso(s)</div>
+
+    <details>
+        <summary>
+            <div class="admin-question-summary-main">
+                <span class="badge">{{focus_abbr}}</span>
+                <div>
+                    <div class="admin-badge-row">
+                        <span class="status {{status_class}}">{{status_label}}</span>
+                        <span class="admin-badge {{visibility_class}}">{{visibility_label}}</span>
+                        {{#has_answer}}<span class="admin-badge answered">Com resposta</span>{{/has_answer}}
+                    </div>
+                    <h2>{{title}}</h2>
+                    <div class="admin-question-meta">{{focus_name}} · {{category}} · por {{author_name}}</div>
+                </div>
+            </div>
+
+            <div class="admin-question-summary-side">
+                <strong>{{votes}}</strong>
+                <span>Boa!</span>
+                {{#has_waiting}}<small>{{waiting_days}} dias de silêncio</small>{{/has_waiting}}
+            </div>
+        </summary>
+
+        <div class="admin-question-body">
+            <div class="admin-question-preview">
+                <div>
+                    <span class="admin-field-label">Contexto</span>
+                    <p>{{body}}</p>
+                </div>
+                <div class="admin-question-facts">
+                    <div><span>Destinatário</span><strong>{{target_name}}</strong></div>
+                    <div><span>Criada</span><strong>{{created_at}}</strong></div>
+                    <div><span>Última alteração</span><strong>{{updated_at}}</strong></div>
+                    {{#has_waiting}}<div><span>Silêncio registrado</span><strong>{{waiting_days}} dias</strong></div>{{/has_waiting}}
+                </div>
+            </div>
+
+            <div class="admin-question-editor">
+                <label>
+                    <span>Estado</span>
+                    <select name="status">
+                        {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
+                    </select>
+                </label>
+
+                <label class="admin-answer-field">
+                    <span>Resposta registrada</span>
+                    <textarea name="answer_text" rows="6" placeholder="Registre aqui a resposta oficial ou um resumo documentado.">{{answer_text}}</textarea>
+                </label>
+            </div>
+
+            <div class="admin-card-footer">
+                <label class="checkbox">
+                    <input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}>
+                    Publicada no site
+                </label>
+
+                <div class="admin-card-actions">
+                    <a class="button ghost small" href="{{question_url}}">Abrir pergunta</a>
+                    <button class="button primary small" type="submit">Salvar alterações</button>
+                </div>
+            </div>
         </div>
-        <a class="button ghost small" href="{{question_url}}">Abrir</a>
-    </div>
-    <div class="form-row">
-        <label>Status
-            <select name="status">
-                {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
-            </select>
-        </label>
-        <label>Resposta<textarea name="answer_text" rows="4" placeholder="Registre aqui a resposta oficial ou o resumo documentado.">{{answer_text}}</textarea></label>
-    </div>
-    <label class="checkbox"><input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}> Publicada no site</label>
-    <button class="button primary small" type="submit">Salvar alterações</button>
+    </details>
 </form>
 {{/questions}}
 </div>
+
+{{^questions}}
+<div class="empty">Nenhuma pergunta encontrada com esses filtros.</div>
+{{/questions}}
+
 {{>partials/site_footer}}

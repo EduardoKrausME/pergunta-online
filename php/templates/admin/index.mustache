@@ -1,19 +1,127 @@
 {{>partials/site_header}}
-<section class="admin-head">
-    <div><div class="eyebrow">PAINEL</div><h1>Administração</h1><p class="muted">O que está acontecendo no produto agora.</p></div>
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">PAINEL</div>
+        <h1>Administração</h1>
+        <p class="muted">Uma visão rápida do que está vivo, parado e precisando de ação.</p>
+    </div>
+    <div class="admin-head-actions">
+        <a class="button ghost" href="{{admin_users_url}}">Gerenciar usuários</a>
+        <a class="button primary" href="{{admin_questions_url}}">Gerenciar perguntas</a>
+    </div>
 </section>
-<div class="stats-grid">
-{{#stats}}<div class="stat-card"><strong>{{value}}</strong><span>{{label}}</span></div>{{/stats}}
+
+<div class="admin-stats-grid">
+{{#stats}}
+    <div class="admin-stat-card">
+        <strong>{{value}}</strong>
+        <span>{{label}}</span>
+        <small>{{hint}}</small>
+    </div>
+{{/stats}}
 </div>
-<section class="panel">
-    <div class="panel-head"><h2>Perguntas recentes</h2><a class="button ghost" href="{{admin_questions_url}}">Gerenciar</a></div>
+
+<div class="admin-dashboard-grid">
+    <section class="panel admin-overview-panel">
+        <div class="panel-head compact">
+            <div>
+                <div class="eyebrow">DISTRIBUIÇÃO</div>
+                <h2>Estado das perguntas</h2>
+            </div>
+        </div>
+
+        <div class="admin-status-list">
+        {{#status_breakdown}}
+            <div class="admin-status-row">
+                <div class="admin-status-copy">
+                    <span class="status-dot {{class}}"></span>
+                    <span>{{label}}</span>
+                    <strong>{{count}}</strong>
+                </div>
+                <div class="admin-progress"><span style="width:{{percent}}%"></span></div>
+                <small>{{percent}}%</small>
+            </div>
+        {{/status_breakdown}}
+        </div>
+
+        <div class="admin-mini-facts">
+            <span><strong>{{save_count}}</strong> perguntas salvas</span>
+            <span><strong>{{admin_count}}</strong> administradores</span>
+        </div>
+    </section>
+
+    <section class="panel admin-silence-panel">
+        <div class="panel-head compact">
+            <div>
+                <div class="eyebrow">CRONÔMETRO DO SILÊNCIO</div>
+                <h2>Há mais tempo esperando</h2>
+            </div>
+            <a href="{{admin_questions_url}}?status=waiting">Ver todas</a>
+        </div>
+
+        {{#has_waiting}}
+        <div class="admin-silence-list">
+        {{#waiting}}
+            <a class="admin-silence-item" href="{{question_url}}">
+                <div>
+                    <span class="admin-silence-days">{{waiting_days}} dias</span>
+                    <strong>{{title}}</strong>
+                    <small>{{focus_name}} · para {{target_name}}</small>
+                </div>
+                <span class="admin-silence-votes">{{votes}} Boa!</span>
+            </a>
+        {{/waiting}}
+        </div>
+        {{/has_waiting}}
+
+        {{^has_waiting}}
+        <div class="empty admin-empty-compact">Nenhuma pergunta está aguardando resposta.</div>
+        {{/has_waiting}}
+    </section>
+</div>
+
+<section class="panel admin-recent-panel">
+    <div class="panel-head">
+        <div>
+            <div class="eyebrow">ATIVIDADE RECENTE</div>
+            <h2>Perguntas mais novas</h2>
+        </div>
+        <a class="button ghost" href="{{admin_questions_url}}">Abrir moderação</a>
+    </div>
+
     <div class="table-wrap">
-        <table>
-            <thead><tr><th>Pergunta</th><th>Autor</th><th>Status</th><th>Data</th></tr></thead>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Pergunta</th>
+                    <th>Autor</th>
+                    <th>Estado</th>
+                    <th>Engajamento</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
             <tbody>
-            {{#latest}}<tr><td><a href="{{question_url}}">{{title}}</a></td><td>{{author_name}}</td><td>{{status_label}}</td><td>{{created_at}}</td></tr>{{/latest}}
+            {{#latest}}
+                <tr>
+                    <td>
+                        <a class="admin-table-title" href="{{question_url}}">{{title}}</a>
+                        <span class="admin-table-sub">{{focus_name}} · {{category}}</span>
+                    </td>
+                    <td>{{author_name}}</td>
+                    <td>
+                        <div class="admin-badge-row">
+                            <span class="status {{status_class}}">{{status_label}}</span>
+                            <span class="admin-badge {{visibility_class}}">{{visibility_label}}</span>
+                        </div>
+                    </td>
+                    <td><strong>{{votes}}</strong> Boa!</td>
+                    <td>{{created_at}}</td>
+                </tr>
+            {{/latest}}
             </tbody>
         </table>
     </div>
 </section>
+
 {{>partials/site_footer}}

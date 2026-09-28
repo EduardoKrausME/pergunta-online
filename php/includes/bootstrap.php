@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
