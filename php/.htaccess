@@ -8,14 +8,16 @@ Options -Indexes -MultiViews
     RewriteEngine On
 
     # Canonical public URLs never expose index.php or the .php extension.
-    RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.php(?:[?\s]) [NC]
-    RewriteRule ^index\.php$ ./ [R=301,L,NE]
+    # Use absolute URL-path substitutions here. Relative substitutions in
+    # per-directory context can leak the physical filesystem path into Location.
+    RewriteCond %{THE_REQUEST} \s/+index\.php(?:[?\s]) [NC]
+    RewriteRule ^index\.php$ / [R=301,L,NE]
 
     RewriteCond %{THE_REQUEST} \s/+(.+/)index\.php(?:[?\s]) [NC]
-    RewriteRule ^(.+)/index\.php$ $1/ [R=301,L,NE]
+    RewriteRule ^(.+)/index\.php$ /$1/ [R=301,L,NE]
 
     RewriteCond %{THE_REQUEST} \s/+(.+?)\.php(?:[?\s]) [NC]
-    RewriteRule ^(.+)\.php$ $1 [R=301,L,NE]
+    RewriteRule ^(.+)\.php$ /$1 [R=301,L,NE]
 
     # Resolve extensionless routes to the existing PHP files internally.
     RewriteCond %{REQUEST_FILENAME} !-f
