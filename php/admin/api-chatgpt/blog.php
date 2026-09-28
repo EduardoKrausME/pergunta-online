@@ -426,8 +426,8 @@ function api_blog_status(array $input, ?string $publishedAt): array {
         $publishedAt = date('Y-m-d H:i:s');
     }
 
-    if ($status !== 'draft' && $publishedAt !== null && strtotime($publishedAt) > time()) {
-        $status = 'scheduled';
+    if ($status !== 'draft' && $publishedAt !== null) {
+        $status = strtotime($publishedAt) > time() ? 'scheduled' : 'published';
     }
 
     return [
@@ -445,21 +445,60 @@ function api_blog_prepare(array $input, array $actor): array {
         throw new InvalidArgumentException('content ficou vazio depois da validação HTML.');
     }
 
-    $externalId = api_string($input['external_id'] ?? '', 'external_id', 0, 190);
-    $sourceUrl = api_blog_http_url($input['source_url'] ?? '', 'source_url');
-    $excerpt = api_string($input['excerpt'] ?? '', 'excerpt');
-    $category = api_string($input['category'] ?? '', 'category', 0, 120);
-    $requestedSlug = api_string($input['slug'] ?? '', 'slug', 0, 190);
-    $language = api_string($input['language'] ?? 'pt_BR', 'language', 2, 20);
+    $externalIdInput = api_string($input['external_id'] ?? '', 'external_id', 0, 190);
+    $sourceUrlInput = api_blog_http_url($input['source_url'] ?? '', 'source_url');
+    $existing = api_blog_find_existing($externalIdInput, $sourceUrlInput, $title);
+
+    $externalId = array_key_exists('external_id', $input)
+        ? $externalIdInput
+        : (string)($existing['external_id'] ?? '');
+    $sourceUrl = array_key_exists('source_url', $input)
+        ? $sourceUrlInput
+        : (string)($existing['source_url'] ?? '');
+
+    $excerpt = array_key_exists('excerpt', $input)
+        ? api_string($input['excerpt'], 'excerpt')
+        : (string)($existing['excerpt'] ?? '');
+    $category = array_key_exists('category', $input)
+        ? api_string($input['category'], 'category', 0, 120)
+        : (string)($existing['category'] ?? '');
+
+    $slugProvided = array_key_exists('slug', $input);
+    $requestedSlug = $slugProvided
+        ? api_string($input['slug'], 'slug', 0, 190)
+        : (string)($existing['slug'] ?? '');
+
+    $language = array_key_exists('language', $input)
+        ? api_string($input['language'], 'language', 2, 20)
+        : (string)($existing['language'] ?? 'pt_BR');
     if (!preg_match('/^[A-Za-z]{2,3}(?:[_-][A-Za-z]{2})?$/', $language)) {
         throw new InvalidArgumentException('language precisa usar formato como pt_BR, en ou es.');
     }
 
-    $metaTitle = api_string($input['meta_title'] ?? '', 'meta_title', 0, 255);
-    $metaDescription = api_string($input['meta_description'] ?? '', 'meta_description', 0, 500);
-    $canonicalUrl = api_blog_http_url($input['canonical_url'] ?? '', 'canonical_url');
-    $publishedAt = api_blog_datetime($input['published_at'] ?? null);
-    $visibility = api_blog_status($input, $publishedAt);
+    $metaTitle = array_key_exists('meta_title', $input)
+        ? api_string($input['meta_title'], 'meta_title', 0, 255)
+        : (string)($existing['meta_title'] ?? '');
+    $metaDescription = array_key_exists('meta_description', $input)
+        ? api_string($input['meta_description'], 'meta_description', 0, 500)
+        : (string)($existing['meta_description'] ?? '');
+    $canonicalUrl = array_key_exists('canonical_url', $input)
+        ? api_blog_http_url($input['canonical_url'], 'canonical_url')
+        : (string)($existing['canonical_url'] ?? '');
+
+    $publicationProvided = array_key_exists('status', $input)
+        || array_key_exists('published', $input)
+        || array_key_exists('published_at', $input);
+
+    if ($existing && !$publicationProvided) {
+        $visibility = [
+            'status' => (string)($existing['status'] ?? ((int)$existing['published'] === 1 ? 'published' : 'draft')),
+            'published' => (int)($existing['published'] ?? 0),
+            'published_at' => $existing['published_at'] ?? null,
+        ];
+    } else {
+        $publishedAt = api_blog_datetime($input['published_at'] ?? null);
+        $visibility = api_blog_status($input, $publishedAt);
+    }
 
     $tagsProvided = array_key_exists('tags', $input);
     $sourcesProvided = array_key_exists('sources', $input);
@@ -470,19 +509,18 @@ function api_blog_prepare(array $input, array $actor): array {
     $updateExisting = api_bool($input['update_existing'] ?? null, false);
     $dryRun = api_bool($input['dry_run'] ?? null, false);
 
-    $existing = api_blog_find_existing($externalId, $sourceUrl, $title);
     $willWrite = !$dryRun && (!$existing || $updateExisting);
-
     $download = null;
     if (!$image['remove'] && $image['url'] !== '' && (!$existing || $updateExisting)) {
         $download = api_blog_download_image($image['url'], $willWrite);
     }
 
-    $slug = blog_unique_slug(
-        db(),
-        $requestedSlug !== '' ? $requestedSlug : $title,
-        $existing ? (int)$existing['id'] : 0
-    );
+    if ($existing && !$slugProvided) {
+        $slug = (string)$existing['slug'];
+    } else {
+        $slugSource = $requestedSlug !== '' ? $requestedSlug : $title;
+        $slug = blog_unique_slug(db(), $slugSource, $existing ? (int)$existing['id'] : 0);
+    }
 
     return [
         'actor_id' => (int)$actor['id'],
@@ -593,7 +631,9 @@ function api_blog_result(array $row, string $mode, ?array $download = null): arr
             'source_url' => (string)$download['source_url'],
             'final_url' => (string)$download['final_url'],
             'path' => (string)$download['path'],
-            'url' => api_blog_public_url((string)$download['path']),
+            'url' => (string)$download['path'] !== ''
+                ? api_blog_public_url((string)$download['path'])
+                : null,
             'mime' => (string)$download['mime'],
             'size' => (int)$download['size'],
             'width' => (int)$download['width'],
@@ -623,8 +663,12 @@ function api_blog_apply(array $prepared, array &$oldImagesToDelete): array {
         $result = api_blog_result($preview, 'dry_run', $prepared['download']);
         $result['would_create'] = !$existing;
         $result['would_update'] = (bool)$existing && $prepared['update_existing'];
-        $result['tags'] = array_column($prepared['tags'], 'tag');
-        $result['sources'] = $prepared['sources'];
+        if (!$existing || $prepared['tags_provided']) {
+            $result['tags'] = array_column($prepared['tags'], 'tag');
+        }
+        if (!$existing || $prepared['sources_provided']) {
+            $result['sources'] = $prepared['sources'];
+        }
         return $result;
     }
 
