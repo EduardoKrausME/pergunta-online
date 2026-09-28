@@ -92,6 +92,7 @@ if (!empty($question['duplicate_of'])) {
 }
 
 render_page('question', [
+    'id' => $id,
     'focus_abbr' => (string)$question['focus_abbr'],
     'focus_name' => (string)$question['focus_name'],
     'status_class' => status_class((string)$question['status']),
