@@ -8,7 +8,7 @@ if (!app_installed()) {
     redirect('install.php');
 }
 
-$id = (int)($_GET['id'] ?? 0);
+$id = (int)Request::get('id', Request::INT, 0);
 $viewer = current_user();
 $viewerId = (int)($viewer['id'] ?? 0);
 $isAdmin = (int)(($viewer['role'] ?? '') === 'admin');
