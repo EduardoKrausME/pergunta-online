@@ -5,13 +5,30 @@
     <header class="blog-post-header">
         <div class="eyebrow">BLOG</div>
         <h1>{{title}}</h1>
-        <div class="blog-post-meta">{{published_date}}{{#has_author}} · por {{author_name}}{{/has_author}}</div>
+        <div class="blog-post-meta">{{published_date}}{{#has_author}} · por {{author_name}}{{/has_author}}{{#has_category}} · {{category}}{{/has_category}}</div>
         {{#excerpt}}<p class="lead">{{excerpt}}</p>{{/excerpt}}
+        {{#has_tags}}
+        <div class="blog-post-tags">
+            {{#tags}}<span>{{tag}}</span>{{/tags}}
+        </div>
+        {{/has_tags}}
     </header>
 
-    <div class="blog-post-cover"><img src="{{cover_image_url}}" alt="" loading="eager" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';"></div>
+    <figure class="blog-post-cover">
+        <img src="{{cover_image_url}}" alt="{{cover_image_alt}}" loading="eager" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';">
+        {{#has_image_credit}}<figcaption>{{cover_image_credit}}</figcaption>{{/has_image_credit}}
+    </figure>
 
     <div class="blog-post-content">{{{content_html}}}</div>
+
+    {{#has_sources}}
+    <section class="blog-post-sources">
+        <h2>Fontes</h2>
+        <ul>
+            {{#sources}}<li><a href="{{url}}" target="_blank" rel="noopener noreferrer">{{title}}</a></li>{{/sources}}
+        </ul>
+    </section>
+    {{/has_sources}}
 
     <footer class="blog-post-footer">
         <span>Publicado no Blog do {{site_name}}</span>
@@ -31,7 +48,7 @@
         {{#related_posts}}
         <article class="blog-card">
             <a class="blog-card-cover" href="{{url}}">
-                <img src="{{cover_image_url}}" alt="" loading="lazy" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';">
+                <img src="{{cover_image_url}}" alt="{{cover_image_alt}}" loading="lazy" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';">
             </a>
             <div class="blog-card-body">
                 <time>{{published_date}}</time>
