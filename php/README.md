@@ -11,18 +11,22 @@ Versão funcional em PHP + MySQL do Pergunta.Online. Não usa Vinext, React, Nod
 
 ## Configuração
 
-Crie o banco vazio e configure as variáveis de ambiente no servidor:
+Edite diretamente o arquivo `config.php`:
 
-```text
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=pergunta_online
-DB_USER=pergunta_online
-DB_PASS=troque-esta-senha
-APP_URL=https://seu-dominio.com
+```php
+return [
+    'database' => [
+        'host' => '127.0.0.1',
+        'port' => 3306,
+        'name' => 'pergunta_online',
+        'user' => 'pergunta_online',
+        'password' => 'troque-esta-senha',
+    ],
+    'app_url' => '',
+];
 ```
 
-`APP_URL` é opcional quando o PHP está servido diretamente por um domínio/subdiretório convencional.
+`app_url` pode ficar vazio para detectar automaticamente o domínio e o subdiretório. Em produção, altere a senha diretamente no `config.php` do servidor e não faça commit da credencial real no repositório público.
 
 Depois acesse `install.php`. O instalador cria as tabelas e pede o primeiro administrador. Depois disso, novos usuários podem se cadastrar em `register.php` e recebem sempre o perfil `user`.
 
@@ -43,4 +47,4 @@ Depois acesse `install.php`. O instalador cria as tabelas e pede o primeiro admi
 
 ## Segurança e produção
 
-Não coloque credenciais diretamente nos arquivos PHP. Configure-as no ambiente do PHP-FPM/Apache. Em produção use HTTPS para que o cookie de sessão seja marcado como `Secure`. O `.htaccess` bloqueia o acesso direto ao `schema.sql` em Apache; em Nginx, crie regra equivalente ou mantenha a pasta fora de listagem pública.
+O `config.php` bloqueia execução direta e o `.htaccess` também nega acesso ao arquivo no Apache. Em Nginx, o arquivo PHP continua sendo executado normalmente e não imprime as configurações, mas recomenda-se manter a configuração do servidor impedindo a entrega de código-fonte PHP. Use HTTPS em produção para que o cookie de sessão seja marcado como `Secure`.
