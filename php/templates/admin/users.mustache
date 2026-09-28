@@ -4,7 +4,7 @@
     <div>
         <div class="eyebrow">USUÁRIOS</div>
         <h1>Contas e permissões</h1>
-        <p class="muted">Pesquise contas, controle acesso e mantenha permissões administrativas visíveis.</p>
+        <p class="muted">Crie contas, altere o papel explicitamente e acompanhe quem realmente acessa a plataforma.</p>
     </div>
 </section>
 
@@ -14,26 +14,42 @@
 {{/summary}}
 </div>
 
+<details class="panel admin-create-box">
+    <summary><strong>Criar usuário manualmente</strong></summary>
+    <form method="post" class="admin-inline-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="create">
+        <label><span>Nome</span><input name="name" required maxlength="120"></label>
+        <label><span>E-mail</span><input type="email" name="email" required maxlength="190"></label>
+        <label><span>Senha inicial</span><input type="password" name="password" required minlength="10"></label>
+        <label><span>Perfil</span>
+            <select name="role">
+                <option value="user">Usuário</option>
+                <option value="respondent">Respondente</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </label>
+        <button class="button primary" type="submit">Criar usuário</button>
+    </form>
+</details>
+
 <form method="get" class="admin-filterbar admin-filterbar-users">
     <label class="admin-search-field">
         <span>Buscar</span>
         <input type="search" name="q" value="{{search_query}}" placeholder="Nome ou e-mail">
     </label>
-
     <label>
         <span>Perfil</span>
         <select name="role">
             {{#role_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/role_filters}}
         </select>
     </label>
-
     <label>
         <span>Status</span>
         <select name="state">
             {{#state_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/state_filters}}
         </select>
     </label>
-
     <div class="admin-filter-actions">
         <button class="button primary" type="submit">Filtrar</button>
         {{#has_filters}}<a class="button ghost" href="{{admin_users_url}}">Limpar</a>{{/has_filters}}
@@ -41,8 +57,8 @@
 </form>
 
 <div class="admin-result-line">
-    <strong>{{result_count}}</strong> usuário(s) exibido(s)
-    <span>Máximo de 200 por consulta.</span>
+    <strong>{{result_count}}</strong> nesta página · {{total_filtered}} encontrado(s)
+    <span>Página {{page}} de {{total_pages}}</span>
 </div>
 
 <section class="panel admin-users-panel">
@@ -53,8 +69,8 @@
                     <th>Usuário</th>
                     <th>Perfil</th>
                     <th>Status</th>
+                    <th>Último acesso</th>
                     <th>Cadastro</th>
-                    <th>Atualização</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -62,27 +78,25 @@
             {{#users}}
                 <tr>
                     <td>
-                        <strong class="admin-table-title">{{name}}</strong>
+                        <a class="admin-table-title" href="{{detail_url}}">{{name}}</a>
                         <span class="admin-table-sub">{{email}}</span>
                     </td>
                     <td><span class="admin-badge role-{{role_class}}">{{role_label}}</span></td>
                     <td><span class="admin-badge state-{{status_class}}">{{status}}</span></td>
+                    <td>{{last_login_at}}</td>
                     <td>{{created_at}}</td>
-                    <td>{{updated_at}}</td>
                     <td>
                         {{#can_manage}}
                         <div class="inline-actions">
+                            {{#set_user}}<form method="post"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="user_id" value="{{id}}"><input type="hidden" name="action" value="set_role"><input type="hidden" name="role" value="user"><button class="button ghost small" type="submit">Usuário</button></form>{{/set_user}}
+                            {{#set_respondent}}<form method="post"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="user_id" value="{{id}}"><input type="hidden" name="action" value="set_role"><input type="hidden" name="role" value="respondent"><button class="button ghost small" type="submit">Respondente</button></form>{{/set_respondent}}
+                            {{#set_admin}}<form method="post"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="user_id" value="{{id}}"><input type="hidden" name="action" value="set_role"><input type="hidden" name="role" value="admin"><button class="button ghost small" type="submit">Admin</button></form>{{/set_admin}}
                             <form method="post">
                                 <input type="hidden" name="csrf_token" value="{{csrf_token}}">
                                 <input type="hidden" name="user_id" value="{{id}}">
-                                <input type="hidden" name="action" value="toggle_role">
-                                <button class="button ghost small" type="submit">{{role_action_label}}</button>
-                            </form>
-                            <form method="post">
-                                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-                                <input type="hidden" name="user_id" value="{{id}}">
-                                <input type="hidden" name="action" value="toggle_active">
-                                <button class="button ghost small" type="submit">{{active_action_label}}</button>
+                                <input type="hidden" name="action" value="set_active">
+                                {{#activate}}<input type="hidden" name="active" value="1"><button class="button ghost small" type="submit">Ativar</button>{{/activate}}
+                                {{^activate}}<input type="hidden" name="active" value="0"><button class="button ghost small" type="submit">Desativar</button>{{/activate}}
                             </form>
                         </div>
                         {{/can_manage}}
@@ -95,8 +109,12 @@
     </div>
 </section>
 
-{{^users}}
-<div class="empty">Nenhum usuário encontrado com esses filtros.</div>
-{{/users}}
+<div class="admin-pagination">
+    {{#has_prev}}<a class="button ghost" href="{{prev_url}}">← Anterior</a>{{/has_prev}}
+    <span>Página {{page}} de {{total_pages}}</span>
+    {{#has_next}}<a class="button ghost" href="{{next_url}}">Próxima →</a>{{/has_next}}
+</div>
+
+{{^users}}<div class="empty">Nenhum usuário encontrado com esses filtros.</div>{{/users}}
 
 {{>partials/site_footer}}
