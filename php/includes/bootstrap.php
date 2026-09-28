@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/request.php';
+
 const APP_NAME = 'Pergunta.Online';
 const APP_VERSION = '1.2.0';
 
@@ -97,8 +99,8 @@ function csrf_token(): string {
 }
 
 function require_csrf(): void {
-    $token = $_POST['csrf_token'] ?? '';
-    if (!is_string($token) || !hash_equals(csrf_token(), $token)) {
+    $token = Request::post('csrf_token', Request::STRING, '');
+    if (!hash_equals(csrf_token(), (string)$token)) {
         http_response_code(419);
         exit('Sessão expirada ou token CSRF inválido. Volte e tente novamente.');
     }
