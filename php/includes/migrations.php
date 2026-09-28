@@ -200,6 +200,18 @@ function run_schema_migrations(PDO $pdo): void {
             ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value)
         ");
         $upsert->execute();
+        $version = 2;
+    }
+
+    if ($version < 3) {
+        $pdo->exec("UPDATE questions SET waiting_since=NULL WHERE status NOT IN ('waiting','taken','answered')");
+        migration_add_index($pdo, 'questions', 'idx_questions_updated', 'updated_at,created_at');
+        migration_add_index($pdo, 'users', 'idx_users_created', 'created_at');
+        $upsert = $pdo->prepare("
+            INSERT INTO app_meta (meta_key,meta_value) VALUES ('schema_version','3')
+            ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value)
+        ");
+        $upsert->execute();
     }
 }
 
@@ -211,5 +223,17 @@ function migration_add_column(PDO $pdo, string $table, string $column, string $d
     $stmt->execute([$table, $column]);
     if (!(int)$stmt->fetchColumn()) {
         $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
+    }
+}
+
+
+function migration_add_index(PDO $pdo, string $table, string $index, string $columns): void {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?
+    ");
+    $stmt->execute([$table, $index]);
+    if (!(int)$stmt->fetchColumn()) {
+        $pdo->exec("ALTER TABLE `{$table}` ADD INDEX `{$index}` ({$columns})");
     }
 }
