@@ -1,0 +1,153 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">PERGUNTA #{{question.id}}</div>
+        <h1>{{question.title}}</h1>
+        <p class="muted">Por {{question.author_name}} · {{question.author_email}} · {{question.status_label}} · moderação: {{question.moderation_status}}</p>
+    </div>
+    <div class="admin-head-actions">
+        <a class="button ghost" href="{{back_url}}">← Voltar</a>
+        <a class="button ghost" href="{{question.public_url}}">Ver página pública</a>
+    </div>
+</section>
+
+{{#question.deleted}}<div class="flash warning">Esta pergunta está em exclusão lógica e não aparece no site público.</div>{{/question.deleted}}
+{{#question.duplicate}}<div class="flash warning">Esta pergunta está marcada como duplicada.</div>{{/question.duplicate}}
+
+<div class="admin-dashboard-grid">
+<section class="panel">
+    <div class="panel-head compact"><div><div class="eyebrow">CONTEÚDO</div><h2>Editar pergunta</h2></div></div>
+    <form method="post" class="admin-stack-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="save_content">
+        <div class="admin-inline-form">
+            <label><span>Foco</span><select name="focus_id" required>{{#focuses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/focuses}}</select></label>
+            <label><span>Categoria</span><select name="category_id" required>{{#categories}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/categories}}</select></label>
+            <label><span>Destinatário</span><select name="target_id" required>{{#targets}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/targets}}</select></label>
+        </div>
+        <label><span>Pergunta</span><input name="title" value="{{question.title}}" minlength="15" maxlength="255" required></label>
+        <label><span>Contexto</span><textarea name="body" rows="8" minlength="20" required>{{question.body}}</textarea></label>
+        <button class="button primary small" type="submit">Salvar conteúdo</button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-head compact"><div><div class="eyebrow">FLUXO</div><h2>Estado e resposta</h2></div></div>
+    <form method="post" class="admin-stack-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="save_state">
+        <label><span>Estado</span><select name="status">{{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}</select></label>
+        {{#has_respondents}}
+        <label><span>Respondente responsável</span><select name="taken_by"><option value="">Sem atribuição explícita</option>{{#respondents}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/respondents}}</select></label>
+        {{/has_respondents}}
+        <label><span>Resposta registrada</span><textarea name="answer_text" rows="8">{{question.answer_text}}</textarea></label>
+        <label class="checkbox"><input type="checkbox" name="published" value="1" {{#question.published}}checked{{/question.published}}> Publicada no site</label>
+        <button class="button primary small" type="submit">Salvar estado</button>
+    </form>
+</section>
+</div>
+
+<div class="admin-dashboard-grid">
+<section class="panel">
+    <div class="panel-head compact"><div><div class="eyebrow">EVIDÊNCIAS</div><h2>Documentos e referências</h2></div></div>
+    {{#has_evidence}}
+    <div class="admin-simple-list">
+    {{#evidence}}
+        <div class="admin-list-row">
+            <span>
+                <strong>{{title}}</strong>
+                <small>{{type}} · {{created_at}}</small>
+                {{#has_reference}}<span class="admin-evidence-reference">{{reference}}</span>{{/has_reference}}
+                {{#has_file}}<a href="{{download_url}}">{{original_name}}</a>{{/has_file}}
+            </span>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                <input type="hidden" name="action" value="remove_evidence">
+                <input type="hidden" name="evidence_id" value="{{id}}">
+                <button class="button ghost small" type="submit">Remover</button>
+            </form>
+        </div>
+    {{/evidence}}
+    </div>
+    {{/has_evidence}}
+    {{^has_evidence}}<div class="empty admin-empty-compact">Nenhuma evidência anexada.</div>{{/has_evidence}}
+
+    <form method="post" enctype="multipart/form-data" class="admin-stack-form admin-subsection">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="add_evidence">
+        <div class="admin-inline-form">
+            <label><span>Tipo</span>
+                <select name="evidence_type">
+                    <option value="url">URL</option><option value="text">Texto</option><option value="document">Documento</option><option value="image">Imagem</option><option value="video">Vídeo</option>
+                </select>
+            </label>
+            <label><span>Título</span><input name="evidence_title" maxlength="190" required></label>
+        </div>
+        <label><span>URL ou texto</span><textarea name="reference_value" rows="3"></textarea></label>
+        <label><span>Arquivo, quando aplicável · máximo 10 MB</span><input type="file" name="evidence_file"></label>
+        <button class="button ghost small" type="submit">Adicionar evidência</button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-head compact"><div><div class="eyebrow">ENGAJAMENTO</div><h2>Quem endossou</h2></div></div>
+    <div class="admin-mini-facts">
+        <span><strong>{{save_count}}</strong> pessoas salvaram</span>
+        <span><strong>{{pending_report_count}}</strong> denúncias pendentes</span>
+    </div>
+    {{#has_voters}}
+    <div class="admin-simple-list">
+        {{#voters}}<div><strong>{{name}}</strong><span>{{email}}</span><small>{{created_at}}</small></div>{{/voters}}
+    </div>
+    {{/has_voters}}
+    {{^has_voters}}<div class="empty admin-empty-compact">Nenhum endosso ainda.</div>{{/has_voters}}
+</section>
+</div>
+
+<section class="panel admin-recent-panel">
+    <div class="panel-head compact"><div><div class="eyebrow">HISTÓRICO</div><h2>Linha do tempo</h2></div></div>
+    {{#has_history}}
+    <div class="admin-timeline">
+        {{#history}}
+        <div class="admin-timeline-item">
+            <strong>{{label}}</strong>
+            <span>{{status_change}}</span>
+            <p>{{details}}</p>
+            <small>{{actor}} · {{created_at}}</small>
+        </div>
+        {{/history}}
+    </div>
+    {{/has_history}}
+    {{^has_history}}<div class="empty admin-empty-compact">Nenhum evento registrado ainda.</div>{{/has_history}}
+</section>
+
+<section class="panel admin-danger-panel">
+    <div class="panel-head compact"><div><div class="eyebrow">MODERAÇÃO AVANÇADA</div><h2>Duplicidade e exclusão</h2></div></div>
+
+    {{#has_duplicates}}
+    <form method="post" class="admin-inline-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="mark_duplicate">
+        <label><span>Esta pergunta é duplicada de</span><select name="duplicate_of" required><option value="">Escolha a pergunta principal</option>{{#duplicates}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{title}}</option>{{/duplicates}}</select></label>
+        <button class="button ghost small" type="submit">Marcar como duplicada</button>
+    </form>
+    {{/has_duplicates}}
+
+    {{#question.deleted}}
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="restore">
+        <button class="button primary small" type="submit">Restaurar pergunta</button>
+    </form>
+    {{/question.deleted}}
+    {{^question.deleted}}
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="delete">
+        <button class="button ghost small" type="submit">Mover para exclusão lógica</button>
+    </form>
+    {{/question.deleted}}
+</section>
+
+{{>partials/site_footer}}
