@@ -73,7 +73,7 @@
                 </div>
             </div>
 
-            {{#has_cover}}<div class="admin-blog-cover-preview"><img src="{{cover_image_url}}" alt=""></div>{{/has_cover}}
+            <div class="admin-blog-cover-preview"><img src="{{cover_image_url}}" alt="" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';"></div>
             <label class="admin-blog-file">
                 <span class="admin-field-label">{{#has_cover}}Substituir imagem{{/has_cover}}{{^has_cover}}Enviar imagem{{/has_cover}}</span>
                 <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp,image/gif">

@@ -9,7 +9,7 @@
         {{#excerpt}}<p class="lead">{{excerpt}}</p>{{/excerpt}}
     </header>
 
-    {{#has_cover}}<div class="blog-post-cover"><img src="{{cover_image_url}}" alt="" loading="eager"></div>{{/has_cover}}
+    <div class="blog-post-cover"><img src="{{cover_image_url}}" alt="" loading="eager" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';"></div>
 
     <div class="blog-post-content">{{{content_html}}}</div>
 

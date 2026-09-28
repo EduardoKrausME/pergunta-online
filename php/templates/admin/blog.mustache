@@ -52,8 +52,7 @@
             <tr>
                 <td>
                     <div class="admin-blog-title-cell">
-                        {{#has_cover}}<img src="{{cover_image_url}}" alt="">{{/has_cover}}
-                        {{^has_cover}}<span class="admin-blog-no-cover">BLOG</span>{{/has_cover}}
+                        <img src="{{cover_image_url}}" alt="" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';">
                         <span>
                             <strong>{{title}}</strong>
                             <small>/blog/{{slug}}</small>

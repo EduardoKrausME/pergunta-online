@@ -45,10 +45,14 @@ function blog_unique_slug(PDO $pdo, string $value, int $excludeId = 0): string {
     }
 }
 
+function blog_fallback_image_url(): string {
+    return base_url('assets/post-sem-image.jpg');
+}
+
 function blog_cover_url(?string $value): string {
     $value = trim((string)$value);
     if ($value === '') {
-        return '';
+        return blog_fallback_image_url();
     }
 
     if (str_starts_with($value, '/') || preg_match('~^https?://~i', $value)) {

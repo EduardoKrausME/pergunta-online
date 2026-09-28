@@ -17,7 +17,7 @@
 <div class="blog-grid">
 {{#posts}}
 <article class="blog-card">
-    {{#has_cover}}<a class="blog-card-cover" href="{{url}}"><img src="{{cover_image_url}}" alt="" loading="lazy"></a>{{/has_cover}}
+    <a class="blog-card-cover" href="{{url}}"><img src="{{cover_image_url}}" alt="" loading="lazy" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';"></a>
     <div class="blog-card-body">
         <time>{{published_date}}</time>
         <h2><a href="{{url}}">{{title}}</a></h2>

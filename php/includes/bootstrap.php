@@ -6,7 +6,7 @@ require_once __DIR__ . '/request.php';
 require_once __DIR__ . '/migrations.php';
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
