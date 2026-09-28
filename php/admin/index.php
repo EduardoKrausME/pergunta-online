@@ -26,6 +26,7 @@ $questionStats = db()->query("
         SUM(status = 'archived') AS archived_count,
         SUM(published = 0) AS hidden_count
     FROM questions
+    WHERE deleted_at IS NULL
 ")->fetch();
 
 $voteCount = (int)db()->query('SELECT COUNT(*) FROM question_votes')->fetchColumn();
@@ -66,7 +67,7 @@ $waitingRows = db()->query("
            DATEDIFF(NOW(), q.waiting_since) AS waiting_days,
            (SELECT COUNT(*) FROM question_votes v WHERE v.question_id = q.id) AS votes
     FROM questions q
-    WHERE q.status = 'waiting' AND q.waiting_since IS NOT NULL
+    WHERE q.status = 'waiting' AND q.waiting_since IS NOT NULL AND q.deleted_at IS NULL
     ORDER BY q.waiting_since ASC
     LIMIT 6
 ")->fetchAll();
@@ -86,6 +87,7 @@ $latestRows = db()->query("
            (SELECT COUNT(*) FROM question_votes v WHERE v.question_id = q.id) AS votes
     FROM questions q
     JOIN users u ON u.id = q.user_id
+    WHERE q.deleted_at IS NULL
     ORDER BY q.created_at DESC
     LIMIT 8
 ")->fetchAll();
@@ -104,6 +106,46 @@ $latest = array_map(static fn(array $question): array => [
     'created_at' => date('d/m/Y H:i', strtotime((string)$question['created_at'])),
 ], $latestRows);
 
+
+$threshold = min(365, max(1, (int)app_setting('silence_threshold_days', '7')));
+$attentionRow = db()->query("
+    SELECT
+        SUM(moderation_status='pending' AND deleted_at IS NULL) pending_moderation,
+        SUM(status='taken' AND taken_at IS NOT NULL AND taken_at < (NOW() - INTERVAL {$threshold} DAY) AND deleted_at IS NULL) stale_taken,
+        SUM(status='answered' AND deleted_at IS NULL AND NOT EXISTS (
+            SELECT 1 FROM question_evidence e WHERE e.question_id=questions.id
+        )) answered_without_evidence
+    FROM questions
+")->fetch();
+$pendingReports = (int)db()->query("SELECT COUNT(*) FROM question_reports WHERE status='pending'")->fetchColumn();
+
+$attention = [
+    [
+        'label' => 'Aguardando moderação',
+        'value' => (int)($attentionRow['pending_moderation'] ?? 0),
+        'hint' => 'perguntas ainda fora do site',
+        'url' => base_url('admin/moderation.php'),
+    ],
+    [
+        'label' => 'Denúncias pendentes',
+        'value' => $pendingReports,
+        'hint' => 'itens para revisar',
+        'url' => base_url('admin/reports.php?status=pending'),
+    ],
+    [
+        'label' => 'Pautas sem movimento',
+        'value' => (int)($attentionRow['stale_taken'] ?? 0),
+        'hint' => 'assumidas há mais de ' . $threshold . ' dias',
+        'url' => base_url('admin/questions.php?status=taken'),
+    ],
+    [
+        'label' => 'Respostas sem evidência',
+        'value' => (int)($attentionRow['answered_without_evidence'] ?? 0),
+        'hint' => 'ciclos fechados sem referência',
+        'url' => base_url('admin/questions.php?status=answered'),
+    ],
+];
+
 render_page('admin/index', [
     'stats' => $stats,
     'status_breakdown' => $statusBreakdown,
@@ -112,4 +154,5 @@ render_page('admin/index', [
     'latest' => $latest,
     'save_count' => $saveCount,
     'admin_count' => (int)$userStats['admins'],
+    'attention' => $attention,
 ], 'Administração', true);
