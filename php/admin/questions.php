@@ -70,7 +70,7 @@ if ($trashFilter === 'active') {
 }
 
 if ($q !== '') {
-    if (mb_strlen($q) >= 4) {
+    if (strlen($q) >= 4) {
         $where[] = '(MATCH(q.title,q.body,q.focus_name,q.category,q.target_name) AGAINST (? IN NATURAL LANGUAGE MODE) OR u.name LIKE ?)';
         $params[] = $q;
         $params[] = '%' . $q . '%';
