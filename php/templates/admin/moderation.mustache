@@ -1,0 +1,45 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">MODERAÇÃO</div>
+        <h1>Perguntas aguardando revisão</h1>
+        <p class="muted">{{count}} pergunta(s) esperando decisão antes de aparecer no site público.</p>
+    </div>
+</section>
+
+<div class="admin-question-list">
+{{#questions}}
+<section class="panel">
+    <div class="admin-badge-row">
+        <span class="admin-badge">{{focus_name}}</span>
+        <span class="admin-badge">{{category}}</span>
+        <span class="admin-badge">Para {{target_name}}</span>
+    </div>
+    <h2>{{title}}</h2>
+    <p class="muted">{{body}}</p>
+    <div class="admin-question-meta">Por {{author_name}} · {{created_at}}</div>
+    <div class="admin-card-footer">
+        <a class="button ghost small" href="{{admin_url}}">Abrir detalhes</a>
+        <div class="admin-card-actions">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                <input type="hidden" name="question_id" value="{{id}}">
+                <input type="hidden" name="action" value="reject">
+                <button class="button ghost small" type="submit">Rejeitar</button>
+            </form>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                <input type="hidden" name="question_id" value="{{id}}">
+                <input type="hidden" name="action" value="approve">
+                <button class="button primary small" type="submit">Aprovar e publicar</button>
+            </form>
+        </div>
+    </div>
+</section>
+{{/questions}}
+</div>
+
+{{^has_questions}}<div class="empty">Nada pendente. A fila de moderação está limpa.</div>{{/has_questions}}
+
+{{>partials/site_footer}}
