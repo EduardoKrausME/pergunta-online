@@ -209,3 +209,5 @@ function audit_log(?int $adminUserId, string $action, string $entityType, ?int $
     $stmt = db()->prepare('INSERT INTO admin_audit_log (admin_user_id,action,entity_type,entity_id,details) VALUES (?,?,?,?,?)');
     $stmt->execute([$adminUserId, $action, $entityType, $entityId, $details]);
 }
+
+require_once __DIR__ . '/questions.php';
