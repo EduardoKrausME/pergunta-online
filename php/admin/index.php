@@ -73,7 +73,7 @@ $waitingRows = db()->query("
 ")->fetchAll();
 
 $waiting = array_map(static fn(array $question): array => [
-    'question_url' => base_url('question.php?id=' . (int)$question['id']),
+    'question_url' => base_url('admin/question.php?id=' . (int)$question['id']),
     'title' => (string)$question['title'],
     'focus_name' => (string)$question['focus_name'],
     'target_name' => (string)$question['target_name'],
@@ -93,7 +93,7 @@ $latestRows = db()->query("
 ")->fetchAll();
 
 $latest = array_map(static fn(array $question): array => [
-    'question_url' => base_url('question.php?id=' . (int)$question['id']),
+    'question_url' => base_url('admin/question.php?id=' . (int)$question['id']),
     'title' => (string)$question['title'],
     'focus_name' => (string)$question['focus_name'],
     'category' => (string)$question['category'],
