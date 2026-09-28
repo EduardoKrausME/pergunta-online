@@ -188,6 +188,7 @@ function run_schema_migrations(PDO $pdo): void {
         $pdo->exec("UPDATE questions q JOIN focuses f ON f.name=q.focus_name SET q.focus_id=f.id WHERE q.focus_id IS NULL");
         $pdo->exec("UPDATE questions q JOIN categories c ON c.name=q.category SET q.category_id=c.id WHERE q.category_id IS NULL");
         $pdo->exec("UPDATE questions q JOIN targets t ON t.name=q.target_name SET q.target_id=t.id WHERE q.target_id IS NULL");
+        $pdo->exec("UPDATE questions SET taken_at=updated_at WHERE status='taken' AND taken_at IS NULL");
         $pdo->exec("
             INSERT INTO question_history (question_id,actor_user_id,event_type,old_status,new_status,details,created_at)
             SELECT q.id,q.user_id,'created',NULL,q.status,'Histórico anterior à implantação da linha do tempo.',q.created_at
