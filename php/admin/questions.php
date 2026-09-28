@@ -16,9 +16,9 @@ $statusOptions = [
     'archived' => 'Arquivada',
 ];
 
-$q = trim((string)($_GET['q'] ?? ''));
-$statusFilter = (string)($_GET['status'] ?? '');
-$visibilityFilter = (string)($_GET['visibility'] ?? '');
+$q = trim((string)Request::get('q', Request::STRING, ''));
+$statusFilter = (string)Request::get('status', Request::STRING, '');
+$visibilityFilter = (string)Request::get('visibility', Request::STRING, '');
 
 if (!array_key_exists($statusFilter, $statusOptions)) {
     $statusFilter = '';
@@ -35,10 +35,10 @@ $returnQuery = http_build_query(array_filter([
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $id = (int)($_POST['question_id'] ?? 0);
-    $status = (string)($_POST['status'] ?? '');
-    $answer = trim((string)($_POST['answer_text'] ?? ''));
-    $published = !empty($_POST['published']) ? 1 : 0;
+    $id = (int)Request::post('question_id', Request::INT, 0);
+    $status = (string)Request::post('status', Request::STRING, '');
+    $answer = trim((string)Request::post('answer_text', Request::STRING, ''));
+    $published = Request::post('published', Request::BOOL, false) ? 1 : 0;
 
     if (array_key_exists($status, $statusOptions)) {
         $waiting = $status === 'waiting' ? 'COALESCE(waiting_since,NOW())' : 'waiting_since';
