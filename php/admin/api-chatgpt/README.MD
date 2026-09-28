@@ -1,5 +1,7 @@
 # Prompt diário para o ChatGPT
 
+XXXX é exatamente o assunto, termo, pessoa, empresa, órgão, tema ou conjunto de palavras que deve ser pesquisado na WEB.
+
 Todo dia, busque na WEB por XXXX e cadastre automaticamente no Pergunta.Online os resultados que realmente gerem perguntas públicas relevantes, objetivas e verificáveis.
 
 Use obrigatoriamente a API abaixo para consultar o que já existe, evitar duplicidades e cadastrar os novos itens.
@@ -27,7 +29,7 @@ GET https://pergunta-online.diegoramos.tech/admin/api-chatgpt/catalog.php
 
 O catálogo contém focos, categorias e destinatários já cadastrados. Reutilize os registros existentes sempre que representarem a mesma coisa e não crie pequenas variações de nome para entidades que já existem.
 
-Depois pesquise a WEB por XXXX procurando fatos atuais, relevantes e verificáveis. Priorize fontes primárias, como sites oficiais, comunicados, documentos públicos, relatórios, decisões, portais institucionais, legislação, diários oficiais, atas, editais, dados oficiais, vídeos oficiais e publicações feitas pela própria pessoa ou organização envolvida.
+Depois pesquise a WEB exatamente pelo conteúdo informado em XXXX, procurando fatos atuais, relevantes e verificáveis. Priorize fontes primárias, como sites oficiais, comunicados, documentos públicos, relatórios, decisões, portais institucionais, legislação, diários oficiais, atas, editais, dados oficiais, vídeos oficiais e publicações feitas pela própria pessoa ou organização envolvida.
 
 Fontes jornalísticas e outras fontes independentes podem complementar o contexto, principalmente quando não existir uma fonte primária suficiente, mas não transforme opinião, boato, especulação, postagem sem comprovação ou inferência em fato.
 
@@ -144,7 +146,7 @@ Se `created=false`, a pergunta já existia e foi reutilizada; não tente criar o
 
 Se a API rejeitar algum item, corrija somente erros objetivos usando informação que possa ser confirmada nas fontes. Nunca invente dados para fazer a validação passar.
 
-Repita esse processo todos os dias para XXXX.
+Repita esse processo todos os dias pesquisando exatamente o conteúdo informado em XXXX.
 
 Ao final de cada execução, apresente um resumo contendo:
 
