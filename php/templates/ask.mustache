@@ -4,17 +4,38 @@
     <h1>Escreva uma pergunta que mereça resposta.</h1>
     <p class="muted">Título claro, contexto suficiente e um destinatário definido. O resto a comunidade ajuda a construir.</p>
     {{#error}}<div class="flash error">{{error}}</div>{{/error}}
+
+    {{#catalog_missing}}
+    <div class="flash warning">Ainda não existem foco, categoria e destinatário ativos suficientes para criar perguntas. Um administrador precisa configurar esses cadastros.</div>
+    {{/catalog_missing}}
+
+    {{#catalog_ready}}
     <form method="post" class="form-grid wide">
         <input type="hidden" name="csrf_token" value="{{csrf_token}}">
         <div class="form-row">
-            <label>Foco<input name="focus_name" required maxlength="120" placeholder="Ex.: Vasco da Gama" value="{{focus_name}}"></label>
-            <label>Sigla<input name="focus_abbr" required maxlength="12" placeholder="VG" value="{{focus_abbr}}"></label>
+            <label>Foco
+                <select name="focus_id" required>
+                    <option value="">Escolha o foco</option>
+                    {{#focuses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/focuses}}
+                </select>
+            </label>
+            <label>Assunto
+                <select name="category_id" required>
+                    <option value="">Escolha o assunto</option>
+                    {{#categories}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/categories}}
+                </select>
+            </label>
         </div>
-        <label>Assunto<input name="category" required maxlength="120" placeholder="Ex.: Gestão" value="{{category}}"></label>
         <label>Pergunta<input name="title" required maxlength="255" minlength="15" value="{{title}}"></label>
         <label>Contexto<textarea name="body" required minlength="20" rows="7">{{body}}</textarea></label>
-        <label>Para quem deve responder?<input name="target_name" required maxlength="190" placeholder="Ex.: Diretoria financeira" value="{{target_name}}"></label>
-        <button class="button primary" type="submit">Publicar pergunta</button>
+        <label>Para quem deve responder?
+            <select name="target_id" required>
+                <option value="">Escolha o destinatário</option>
+                {{#targets}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/targets}}
+            </select>
+        </label>
+        <button class="button primary" type="submit">Enviar pergunta</button>
     </form>
+    {{/catalog_ready}}
 </section>
 {{>partials/site_footer}}
