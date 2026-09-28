@@ -12,12 +12,12 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $focus = trim((string)($_POST['focus_name'] ?? ''));
-    $abbr = strtoupper(trim((string)($_POST['focus_abbr'] ?? '')));
-    $category = trim((string)($_POST['category'] ?? ''));
-    $title = trim((string)($_POST['title'] ?? ''));
-    $body = trim((string)($_POST['body'] ?? ''));
-    $target = trim((string)($_POST['target_name'] ?? ''));
+    $focus = trim((string)Request::post('focus_name', Request::STRING, ''));
+    $abbr = strtoupper(trim((string)Request::post('focus_abbr', Request::STRING, '')));
+    $category = trim((string)Request::post('category', Request::STRING, ''));
+    $title = trim((string)Request::post('title', Request::STRING, ''));
+    $body = trim((string)Request::post('body', Request::STRING, ''));
+    $target = trim((string)Request::post('target_name', Request::STRING, ''));
     if (strlen($focus) < 2 || strlen($abbr) < 1 || strlen($category) < 2 || strlen($title) < 15 || strlen($body) < 20 || strlen($target) < 2) {
         $error = 'Preencha todos os campos. A pergunta precisa ter ao menos 15 caracteres e o contexto ao menos 20.';
     } else {
@@ -31,10 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 render_page('ask', [
     'error' => $error,
-    'focus_name' => (string)($_POST['focus_name'] ?? ''),
-    'focus_abbr' => (string)($_POST['focus_abbr'] ?? ''),
-    'category' => (string)($_POST['category'] ?? ''),
-    'title' => (string)($_POST['title'] ?? ''),
-    'body' => (string)($_POST['body'] ?? ''),
-    'target_name' => (string)($_POST['target_name'] ?? ''),
+    'focus_name' => (string)Request::post('focus_name', Request::STRING, ''),
+    'focus_abbr' => (string)Request::post('focus_abbr', Request::STRING, ''),
+    'category' => (string)Request::post('category', Request::STRING, ''),
+    'title' => (string)Request::post('title', Request::STRING, ''),
+    'body' => (string)Request::post('body', Request::STRING, ''),
+    'target_name' => (string)Request::post('target_name', Request::STRING, ''),
 ], 'Nova pergunta');
