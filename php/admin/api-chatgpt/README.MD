@@ -163,47 +163,129 @@ Ao final de cada execução, apresente um resumo contendo:
 
 ## API do Blog
 
-Para criar um post:
+Para criar ou atualizar posts do blog:
 
 ```
 POST https://pergunta-online.diegoramos.tech/admin/api-chatgpt/blog.php
 ```
 
-Corpo JSON:
+O endpoint continua aceitando o formato antigo com `published` e `image_url`, mas o formato recomendado é:
 
 ```json
 {
-  "title": "Título do artigo",
-  "slug": "titulo-do-artigo",
+  "external_id": "vasco-ge-20260928-001",
+  "source_url": "https://fonte.example/noticia",
+  "title": "Vasco inicia nova etapa das obras em São Januário",
+  "slug": "vasco-inicia-nova-etapa-obras-sao-januario",
   "excerpt": "Resumo curto para a listagem.",
   "content": "<p>Conteúdo completo do artigo em HTML.</p>",
-  "published": true,
+  "category": "Vasco",
+  "tags": [
+    "Vasco",
+    "São Januário",
+    "Estádio"
+  ],
+  "sources": [
+    {
+      "title": "Comunicado oficial do Vasco",
+      "url": "https://vasco.com.br/exemplo"
+    },
+    {
+      "title": "Reportagem complementar",
+      "url": "https://fonte.example/reportagem"
+    }
+  ],
+  "status": "published",
   "published_at": "2026-09-28T15:00:00-03:00",
-  "image_url": "https://site-publico.example/imagem.jpg"
+  "language": "pt_BR",
+  "image": {
+    "url": "https://site-publico.example/imagem.jpg",
+    "alt": "São Januário durante partida do Vasco",
+    "credit": "Nome da fonte",
+    "source_url": "https://site-publico.example/pagina-da-imagem"
+  },
+  "meta_title": "Vasco inicia nova etapa das obras em São Januário",
+  "meta_description": "Veja os detalhes da nova etapa das obras em São Januário.",
+  "canonical_url": "https://pergunta-online.diegoramos.tech/blog/vasco-inicia-nova-etapa-obras-sao-januario",
+  "update_existing": false,
+  "dry_run": false
 }
 ```
 
-`slug`, `excerpt`, `published_at` e `image_url` são opcionais. Se `slug` não for enviado, ele é gerado pelo título. Se `published` não for enviado, o padrão é `true`.
+### Idempotência e atualização
 
-Quando `image_url` for enviado, o PHP baixa a imagem, valida o conteúdo real e salva em `php/upload`. São aceitos JPG, PNG, WEBP e GIF com até 8 MB. A URL externa não fica gravada como capa. Endereços locais, privados e reservados são recusados.
+Use `external_id` sempre que o sistema que envia o post tiver um identificador estável. A API procura duplicidade nesta ordem:
 
-Também pode enviar até 10 posts:
+1. `external_id`;
+2. `source_url`;
+3. título, apenas como compatibilidade quando os dois anteriores não forem enviados.
+
+Quando um registro já existe e `update_existing=false`, a API devolve `reused=true` e não altera o post.
+
+Quando `update_existing=true`, título e conteúdo são atualizados e os campos opcionais só são alterados quando aparecem no JSON. Omitir `tags`, `sources`, `image`, SEO ou categoria preserva o valor anterior.
+
+### Status
+
+Prefira `status`:
+
+- `draft`: não publicado;
+- `scheduled`: exige `published_at`;
+- `published`: publicado; se `published_at` estiver no futuro, a API normaliza para `scheduled`.
+
+O campo antigo `published` continua funcionando para compatibilidade.
+
+### Imagem
+
+Quando `image.url` ou o campo legado `image_url` for enviado, o PHP baixa a imagem antes de abrir a transação do banco, valida MIME, dimensões e tamanho e salva em `php/upload`.
+
+São aceitos JPG, PNG, WEBP e GIF com até 8 MB. URLs locais, privadas, reservadas, com autenticação embutida ou portas diferentes de 80/443 são recusadas. Redirecionamentos também são revalidados.
+
+A resposta inclui MIME, tamanho, largura, altura, URL original, URL final depois dos redirecionamentos e o caminho local salvo.
+
+### Tags e fontes
+
+`tags` aceita até 20 textos. Elas são usadas também para melhorar a seleção de posts relacionados.
+
+`sources` aceita até 20 objetos com `title` e `url`. As fontes ficam armazenadas separadamente e aparecem no final do artigo publicado.
+
+### Dry run
+
+Com:
+
+```json
+{
+  "title": "Título",
+  "content": "<p>Conteúdo</p>",
+  "image": {
+    "url": "https://site.example/imagem.jpg"
+  },
+  "dry_run": true
+}
+```
+
+a API valida o post, testa a imagem remota e informa se criaria ou atualizaria um registro, mas não grava banco nem arquivo em `php/upload`.
+
+### Lote
+
+É possível enviar até 10 posts:
 
 ```json
 {
   "items": [
     {
+      "external_id": "post-001",
       "title": "Primeiro artigo",
       "content": "<p>Conteúdo.</p>",
-      "image_url": "https://site-publico.example/capa.jpg"
+      "status": "published"
     },
     {
+      "external_id": "post-002",
       "title": "Segundo artigo",
-      "content": "<p>Outro conteúdo.</p>"
+      "content": "<p>Outro conteúdo.</p>",
+      "status": "draft"
     }
   ]
 }
 ```
 
-Se já existir um post com o mesmo título, a API devolve `created=false` e reutiliza o registro existente.
-
+A resposta de cada item informa `created`, `updated`, `reused` e `dry_run`.
