@@ -1,0 +1,62 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">{{eyebrow}}</div>
+        <h1>{{title}}</h1>
+        <p class="muted">{{description}}</p>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head compact"><div><h2>Novo {{item_label}}</h2></div></div>
+    <form method="post" action="{{form_action}}" class="admin-inline-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="action" value="save">
+        <label><span>Nome</span><input name="name" required maxlength="120"></label>
+        {{#is_focus}}<label><span>Sigla</span><input name="abbr" required maxlength="12"></label>{{/is_focus}}
+        <button class="button primary" type="submit">Adicionar</button>
+    </form>
+</section>
+
+<section class="panel admin-recent-panel">
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr><th>{{item_label}}</th>{{#is_focus}}<th>Sigla</th>{{/is_focus}}<th>Perguntas</th><th>Status</th><th>Editar</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+            {{#items}}
+                <tr>
+                    <td><strong>{{name}}</strong></td>
+                    {{#is_focus}}<td>{{abbr}}</td>{{/is_focus}}
+                    <td>{{question_count}}</td>
+                    <td><span class="admin-badge state-{{status_class}}">{{status}}</span></td>
+                    <td>
+                        <form method="post" action="{{form_action}}" class="inline-actions">
+                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                            <input type="hidden" name="action" value="save">
+                            <input type="hidden" name="id" value="{{id}}">
+                            <input name="name" value="{{name}}" required maxlength="120">
+                            {{#is_focus}}<input name="abbr" value="{{abbr}}" required maxlength="12" class="admin-short-input">{{/is_focus}}
+                            <button class="button ghost small" type="submit">Salvar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" action="{{form_action}}">
+                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                            <input type="hidden" name="action" value="set_active">
+                            <input type="hidden" name="id" value="{{id}}">
+                            {{#activate}}<input type="hidden" name="active" value="1"><button class="button ghost small" type="submit">Ativar</button>{{/activate}}
+                            {{^activate}}<input type="hidden" name="active" value="0"><button class="button ghost small" type="submit">Desativar</button>{{/activate}}
+                        </form>
+                    </td>
+                </tr>
+            {{/items}}
+            </tbody>
+        </table>
+    </div>
+    {{^has_items}}<div class="empty">Nenhum item cadastrado.</div>{{/has_items}}
+</section>
+
+{{>partials/site_footer}}
