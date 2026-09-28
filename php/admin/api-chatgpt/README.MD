@@ -25,6 +25,16 @@ Authorization: Bearer pergunta-online-academico-2026-chatgpt
 Content-Type: application/json
 ```
 
+Para testar diretamente o servidor pela porta 8080, sem depender da resolução DNS ou do proxy reverso, use:
+
+```bash
+curl -v \
+  http://137.184.104.144:8080/admin/api-chatgpt/catalog.php \
+  -H 'Host: pergunta-online.diegoramos.tech' \
+  -H 'Authorization: Bearer pergunta-online-academico-2026-chatgpt' \
+  -H 'Content-Type: application/json'
+```
+
 Antes de pesquisar, consulte o catálogo atual:
 
 ```
