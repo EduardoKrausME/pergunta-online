@@ -1,0 +1,75 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">USUÁRIO</div>
+        <h1>{{user.name}}</h1>
+        <p class="muted">{{user.email}} · {{user.role}} · {{user.status}}</p>
+    </div>
+    <a class="button ghost" href="{{back_url}}">← Voltar aos usuários</a>
+</section>
+
+<div class="admin-stats-grid admin-stats-compact">
+{{#stats}}
+    <div class="admin-stat-card"><strong>{{value}}</strong><span>{{label}}</span></div>
+{{/stats}}
+</div>
+
+<div class="admin-dashboard-grid">
+    <section class="panel">
+        <div class="panel-head compact"><div><div class="eyebrow">CONTA</div><h2>Dados de acesso</h2></div></div>
+        <div class="admin-definition-list">
+            <div><span>Perfil</span><strong>{{user.role}}</strong></div>
+            <div><span>Status</span><strong>{{user.status}}</strong></div>
+            <div><span>Último acesso</span><strong>{{user.last_login_at}}</strong></div>
+            <div><span>Criada</span><strong>{{user.created_at}}</strong></div>
+            <div><span>Atualizada</span><strong>{{user.updated_at}}</strong></div>
+        </div>
+
+        <form method="post" class="admin-stack-form">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="action" value="reset_password">
+            <h3>Redefinir senha</h3>
+            <label><span>Nova senha</span><input type="password" name="password" required minlength="10"></label>
+            <label><span>Repita a senha</span><input type="password" name="confirm_password" required minlength="10"></label>
+            <button class="button primary small" type="submit">Redefinir senha</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head compact"><div><div class="eyebrow">REPRESENTAÇÃO</div><h2>Destinatários vinculados</h2></div></div>
+        {{#has_targets}}
+            <div class="admin-simple-list">{{#targets}}<div><strong>{{name}}</strong></div>{{/targets}}</div>
+        {{/has_targets}}
+        {{^has_targets}}<div class="empty admin-empty-compact">Nenhum destinatário vinculado.</div>{{/has_targets}}
+    </section>
+</div>
+
+<section class="panel admin-recent-panel">
+    <div class="panel-head compact"><div><div class="eyebrow">ATIVIDADE</div><h2>Perguntas criadas</h2></div></div>
+    {{#has_questions}}
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead><tr><th>Pergunta</th><th>Estado</th><th>Publicação</th><th>Data</th></tr></thead>
+            <tbody>
+            {{#questions}}
+                <tr><td><a class="admin-table-title" href="{{url}}">{{title}}</a></td><td>{{status}}</td><td>{{visibility}}</td><td>{{created_at}}</td></tr>
+            {{/questions}}
+            </tbody>
+        </table>
+    </div>
+    {{/has_questions}}
+    {{^has_questions}}<div class="empty admin-empty-compact">Este usuário ainda não criou perguntas.</div>{{/has_questions}}
+</section>
+
+<section class="panel admin-recent-panel">
+    <div class="panel-head compact"><div><div class="eyebrow">AUDITORIA</div><h2>Alterações administrativas</h2></div></div>
+    {{#has_audit}}
+    <div class="admin-simple-list">
+        {{#audit}}<div><strong>{{action}}</strong><span>{{details}}</span><small>{{created_at}}</small></div>{{/audit}}
+    </div>
+    {{/has_audit}}
+    {{^has_audit}}<div class="empty admin-empty-compact">Nenhuma alteração administrativa registrada.</div>{{/has_audit}}
+</section>
+
+{{>partials/site_footer}}
