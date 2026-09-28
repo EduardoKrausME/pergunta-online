@@ -281,3 +281,54 @@ function blog_content_html(string $content): string {
     return blog_sanitize_html($content);
 }
 
+function blog_store_downloaded_image(string $tmp, int $size): string {
+    if ($tmp === '' || !is_file($tmp)) {
+        throw new RuntimeException('A imagem baixada não foi encontrada.');
+    }
+    if ($size <= 0 || $size > 8 * 1024 * 1024) {
+        throw new RuntimeException('A imagem deve ter no máximo 8 MB.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = (string)$finfo->file($tmp);
+    $extensions = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+    if (!isset($extensions[$mime])) {
+        throw new RuntimeException('Formato inválido. Use JPG, PNG, WEBP ou GIF.');
+    }
+
+    $dimensions = @getimagesize($tmp);
+    if (!is_array($dimensions) || empty($dimensions[0]) || empty($dimensions[1])) {
+        throw new RuntimeException('O arquivo baixado não é uma imagem válida.');
+    }
+    $width = (int)$dimensions[0];
+    $height = (int)$dimensions[1];
+    if ($width > 12000 || $height > 12000 || ($width * $height) > 60000000) {
+        throw new RuntimeException('A resolução da imagem é muito grande.');
+    }
+
+    $uploadDir = dirname(__DIR__) . '/upload';
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+        throw new RuntimeException('Não foi possível criar a pasta de upload.');
+    }
+    if (!is_writable($uploadDir)) {
+        throw new RuntimeException('A pasta php/upload não possui permissão de escrita.');
+    }
+
+    $filename = 'blog-' . date('Ymd-His') . '-' . bin2hex(random_bytes(10)) . '.' . $extensions[$mime];
+    $destination = $uploadDir . '/' . $filename;
+    if (!@rename($tmp, $destination)) {
+        if (!@copy($tmp, $destination)) {
+            throw new RuntimeException('Não foi possível salvar a imagem baixada.');
+        }
+        @unlink($tmp);
+    }
+
+    @chmod($destination, 0644);
+    return 'upload/' . $filename;
+}
+

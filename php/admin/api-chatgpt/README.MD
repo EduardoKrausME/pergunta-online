@@ -160,3 +160,50 @@ Ao final de cada execução, apresente um resumo contendo:
 - quantas foram descartadas por duplicidade;
 - quantas foram cadastradas;
 - ID, título, destinatário e URL de cada pergunta criada ou reutilizada.
+
+## API do Blog
+
+Para criar um post:
+
+```
+POST https://pergunta-online.diegoramos.tech/admin/api-chatgpt/blog.php
+```
+
+Corpo JSON:
+
+```json
+{
+  "title": "Título do artigo",
+  "slug": "titulo-do-artigo",
+  "excerpt": "Resumo curto para a listagem.",
+  "content": "<p>Conteúdo completo do artigo em HTML.</p>",
+  "published": true,
+  "published_at": "2026-09-28T15:00:00-03:00",
+  "image_url": "https://site-publico.example/imagem.jpg"
+}
+```
+
+`slug`, `excerpt`, `published_at` e `image_url` são opcionais. Se `slug` não for enviado, ele é gerado pelo título. Se `published` não for enviado, o padrão é `true`.
+
+Quando `image_url` for enviado, o PHP baixa a imagem, valida o conteúdo real e salva em `php/upload`. São aceitos JPG, PNG, WEBP e GIF com até 8 MB. A URL externa não fica gravada como capa. Endereços locais, privados e reservados são recusados.
+
+Também pode enviar até 10 posts:
+
+```json
+{
+  "items": [
+    {
+      "title": "Primeiro artigo",
+      "content": "<p>Conteúdo.</p>",
+      "image_url": "https://site-publico.example/capa.jpg"
+    },
+    {
+      "title": "Segundo artigo",
+      "content": "<p>Outro conteúdo.</p>"
+    }
+  ]
+}
+```
+
+Se já existir um post com o mesmo título, a API devolve `created=false` e reutiliza o registro existente.
+

@@ -58,6 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($form['content'] === '') {
         $errors[] = ['message' => 'Escreva o conteúdo do artigo.'];
+    } else {
+        $form['content'] = blog_sanitize_html($form['content']);
+        if ($form['content'] === '') {
+            $errors[] = ['message' => 'O conteúdo ficou vazio depois da validação HTML.'];
+        }
     }
 
     try {

@@ -46,6 +46,37 @@ $questionSchema = [
     ],
 ];
 
+
+$blogPostSchema = [
+    'type' => 'object',
+    'required' => ['title', 'content'],
+    'properties' => [
+        'title' => ['type' => 'string', 'minLength' => 3, 'maxLength' => 255],
+        'slug' => ['type' => 'string', 'maxLength' => 190],
+        'excerpt' => ['type' => 'string'],
+        'content' => ['type' => 'string', 'minLength' => 1],
+        'published' => ['type' => 'boolean', 'default' => true],
+        'published_at' => ['type' => 'string', 'format' => 'date-time'],
+        'image_url' => [
+            'type' => 'string',
+            'format' => 'uri',
+            'description' => 'Imagem remota que será baixada e salva em php/upload.',
+        ],
+    ],
+];
+
+$blogBatchSchema = [
+    'type' => 'object',
+    'required' => ['items'],
+    'properties' => [
+        'items' => [
+            'type' => 'array',
+            'maxItems' => 10,
+            'items' => ['$ref' => '#/components/schemas/BlogPost'],
+        ],
+    ],
+];
+
 $batchSchema = [
     'type' => 'object',
     'required' => ['items'],
@@ -77,6 +108,7 @@ api_json([
         'schemas' => [
             'Evidence' => $evidenceSchema,
             'Question' => $questionSchema,
+            'BlogPost' => $blogPostSchema,
         ],
     ],
     'security' => [['bearerAuth' => []]],
@@ -119,6 +151,29 @@ api_json([
                     ],
                 ],
                 'responses' => ['200' => ['description' => 'Resultado do cadastro']],
+            ],
+        ],
+        '/blog' => [
+            'post' => [
+                'operationId' => 'createBlogPosts',
+                'summary' => 'Cria posts do blog e baixa image_url para php/upload.',
+                'requestBody' => [
+                    'required' => true,
+                    'content' => [
+                        'application/json' => [
+                            'schema' => [
+                                'oneOf' => [
+                                    ['$ref' => '#/components/schemas/BlogPost'],
+                                    $blogBatchSchema,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'responses' => [
+                    '200' => ['description' => 'Posts criados ou reutilizados'],
+                    '422' => ['description' => 'Dados inválidos ou imagem recusada'],
+                ],
             ],
         ],
         '/import' => [
