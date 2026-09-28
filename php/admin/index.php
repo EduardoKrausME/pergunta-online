@@ -33,12 +33,42 @@ $voteCount = (int)db()->query('SELECT COUNT(*) FROM question_votes')->fetchColum
 $saveCount = (int)db()->query('SELECT COUNT(*) FROM question_saves')->fetchColumn();
 
 $stats = [
-    ['label' => 'Perguntas', 'value' => (int)$questionStats['total'], 'hint' => 'histórico total'],
-    ['label' => 'Aguardando', 'value' => (int)$questionStats['waiting_count'], 'hint' => 'cronômetro ativo'],
-    ['label' => 'Respondidas', 'value' => (int)$questionStats['answered_count'], 'hint' => 'ciclo fechado'],
-    ['label' => 'Endossos', 'value' => $voteCount, 'hint' => 'Boas registradas'],
-    ['label' => 'Usuários ativos', 'value' => (int)$userStats['active'], 'hint' => (int)$userStats['total'] . ' cadastrados'],
-    ['label' => 'Não publicadas', 'value' => (int)$questionStats['hidden_count'], 'hint' => 'fora do site público'],
+    [
+        'label' => 'Perguntas',
+        'value' => (int)$questionStats['total'],
+        'hint' => 'histórico total',
+        'url' => base_url('admin/questions'),
+    ],
+    [
+        'label' => 'Aguardando',
+        'value' => (int)$questionStats['waiting_count'],
+        'hint' => 'cronômetro ativo',
+        'url' => base_url('admin/questions?status=waiting'),
+    ],
+    [
+        'label' => 'Respondidas',
+        'value' => (int)$questionStats['answered_count'],
+        'hint' => 'ciclo fechado',
+        'url' => base_url('admin/questions?status=answered'),
+    ],
+    [
+        'label' => 'Endossos',
+        'value' => $voteCount,
+        'hint' => 'Boas registradas',
+        'url' => '',
+    ],
+    [
+        'label' => 'Usuários ativos',
+        'value' => (int)$userStats['active'],
+        'hint' => (int)$userStats['total'] . ' cadastrados',
+        'url' => base_url('admin/users?state=active'),
+    ],
+    [
+        'label' => 'Não publicadas',
+        'value' => (int)$questionStats['hidden_count'],
+        'hint' => 'fora do site público',
+        'url' => base_url('admin/questions?visibility=hidden'),
+    ],
 ];
 
 $statusDefinitions = [
