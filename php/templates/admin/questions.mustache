@@ -4,37 +4,23 @@
     <div>
         <div class="eyebrow">PERGUNTAS</div>
         <h1>Moderação e respostas</h1>
-        <p class="muted">Encontre o que precisa de atenção, mude o estágio e registre o fechamento do ciclo.</p>
+        <p class="muted">Triagem rápida aqui; edição, histórico, evidências e moderação avançada ficam na página individual.</p>
     </div>
     <a class="button ghost" href="{{home_url}}">Ver site público</a>
 </section>
 
 <div class="admin-summary-strip">
-{{#summary}}
-    <div><strong>{{value}}</strong><span>{{label}}</span></div>
-{{/summary}}
+{{#summary}}<div><strong>{{value}}</strong><span>{{label}}</span></div>{{/summary}}
 </div>
 
-<form method="get" class="admin-filterbar">
+<form method="get" class="admin-filterbar admin-filterbar-questions">
     <label class="admin-search-field">
         <span>Buscar</span>
         <input type="search" name="q" value="{{search_query}}" placeholder="Pergunta, foco, assunto, destinatário ou autor">
     </label>
-
-    <label>
-        <span>Estado</span>
-        <select name="status">
-            {{#status_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/status_filters}}
-        </select>
-    </label>
-
-    <label>
-        <span>Publicação</span>
-        <select name="visibility">
-            {{#visibility_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/visibility_filters}}
-        </select>
-    </label>
-
+    <label><span>Estado</span><select name="status">{{#status_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/status_filters}}</select></label>
+    <label><span>Publicação</span><select name="visibility">{{#visibility_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/visibility_filters}}</select></label>
+    <label><span>Lixeira</span><select name="trash">{{#trash_filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/trash_filters}}</select></label>
     <div class="admin-filter-actions">
         <button class="button primary" type="submit">Filtrar</button>
         {{#has_filters}}<a class="button ghost" href="{{admin_questions_url}}">Limpar</a>{{/has_filters}}
@@ -42,8 +28,8 @@
 </form>
 
 <div class="admin-result-line">
-    <strong>{{result_count}}</strong> pergunta(s) exibida(s)
-    <span>Máximo de 100 por consulta.</span>
+    <strong>{{result_count}}</strong> nesta página · {{total_filtered}} encontrado(s)
+    <span>Página {{page}} de {{total_pages}}</span>
 </div>
 
 <div class="admin-question-list">
@@ -51,7 +37,6 @@
 <form method="post" class="admin-question-card">
     <input type="hidden" name="csrf_token" value="{{csrf_token}}">
     <input type="hidden" name="question_id" value="{{id}}">
-
     <details>
         <summary>
             <div class="admin-question-summary-main">
@@ -60,26 +45,24 @@
                     <div class="admin-badge-row">
                         <span class="status {{status_class}}">{{status_label}}</span>
                         <span class="admin-badge {{visibility_class}}">{{visibility_label}}</span>
+                        <span class="admin-badge">{{moderation_label}}</span>
                         {{#has_answer}}<span class="admin-badge answered">Com resposta</span>{{/has_answer}}
+                        {{#deleted}}<span class="admin-badge hidden">Excluída</span>{{/deleted}}
+                        {{#pending_reports}}<span class="admin-badge hidden">{{pending_reports}} denúncia(s)</span>{{/pending_reports}}
                     </div>
                     <h2>{{title}}</h2>
                     <div class="admin-question-meta">{{focus_name}} · {{category}} · por {{author_name}}</div>
                 </div>
             </div>
-
             <div class="admin-question-summary-side">
-                <strong>{{votes}}</strong>
-                <span>Boa!</span>
+                <strong>{{votes}}</strong><span>Boa!</span>
                 {{#has_waiting}}<small>{{waiting_days}} dias de silêncio</small>{{/has_waiting}}
             </div>
         </summary>
 
         <div class="admin-question-body">
             <div class="admin-question-preview">
-                <div>
-                    <span class="admin-field-label">Contexto</span>
-                    <p>{{body}}</p>
-                </div>
+                <div><span class="admin-field-label">Contexto</span><p>{{body}}</p></div>
                 <div class="admin-question-facts">
                     <div><span>Destinatário</span><strong>{{target_name}}</strong></div>
                     <div><span>Criada</span><strong>{{created_at}}</strong></div>
@@ -88,39 +71,35 @@
                 </div>
             </div>
 
+            {{^deleted}}
             <div class="admin-question-editor">
-                <label>
-                    <span>Estado</span>
-                    <select name="status">
-                        {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
-                    </select>
-                </label>
-
-                <label class="admin-answer-field">
-                    <span>Resposta registrada</span>
-                    <textarea name="answer_text" rows="6" placeholder="Registre aqui a resposta oficial ou um resumo documentado.">{{answer_text}}</textarea>
-                </label>
+                <label><span>Estado</span><select name="status">{{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}</select></label>
+                <label class="admin-answer-field"><span>Resposta registrada</span><textarea name="answer_text" rows="5">{{answer_text}}</textarea></label>
             </div>
-
             <div class="admin-card-footer">
-                <label class="checkbox">
-                    <input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}>
-                    Publicada no site
-                </label>
-
+                <label class="checkbox"><input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}> Publicada no site</label>
                 <div class="admin-card-actions">
-                    <a class="button ghost small" href="{{question_url}}">Abrir pergunta</a>
-                    <button class="button primary small" type="submit">Salvar alterações</button>
+                    <a class="button ghost small" href="{{question_url}}">Página pública</a>
+                    <a class="button ghost small" href="{{admin_question_url}}">Administrar</a>
+                    <button class="button primary small" type="submit">Salvar estado</button>
                 </div>
             </div>
+            {{/deleted}}
+            {{#deleted}}
+            <div class="admin-card-footer"><a class="button primary small" href="{{admin_question_url}}">Abrir para restaurar</a></div>
+            {{/deleted}}
         </div>
     </details>
 </form>
 {{/questions}}
 </div>
 
-{{^questions}}
-<div class="empty">Nenhuma pergunta encontrada com esses filtros.</div>
-{{/questions}}
+{{^questions}}<div class="empty">Nenhuma pergunta encontrada com esses filtros.</div>{{/questions}}
+
+<div class="admin-pagination">
+    {{#has_prev}}<a class="button ghost" href="{{prev_url}}">← Anterior</a>{{/has_prev}}
+    <span>Página {{page}} de {{total_pages}}</span>
+    {{#has_next}}<a class="button ghost" href="{{next_url}}">Próxima →</a>{{/has_next}}
+</div>
 
 {{>partials/site_footer}}
