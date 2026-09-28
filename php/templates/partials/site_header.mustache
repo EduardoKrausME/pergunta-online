@@ -10,7 +10,7 @@
 <body>
 <header class="site-header">
     <div class="wrap header-inner">
-        <a class="brand" href="{{home_url}}"><span class="brand-dot"></span>pergunta.online</a>
+        <a class="brand" href="{{home_url}}"><span class="brand-dot"></span>{{site_name}}</a>
         <nav class="main-nav" aria-label="Navegação principal">
             <a href="{{home_url}}">Explorar</a>
             {{#logged_in}}
@@ -21,7 +21,7 @@
             {{/logged_in}}
             {{#logged_out}}
                 <a href="{{login_url}}">Entrar</a>
-                <a class="button primary small" href="{{register_url}}">Criar conta</a>
+                {{#registration_enabled}}<a class="button primary small" href="{{register_url}}">Criar conta</a>{{/registration_enabled}}
             {{/logged_out}}
         </nav>
     </div>
