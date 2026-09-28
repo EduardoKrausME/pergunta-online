@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_users_role (role),
-    INDEX idx_users_active (active)
+    INDEX idx_users_active (active),
+    INDEX idx_users_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS focuses (
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS questions (
     INDEX idx_questions_focus (focus_name),
     INDEX idx_questions_category (category),
     INDEX idx_questions_created (created_at),
+    INDEX idx_questions_updated (updated_at, created_at),
     FULLTEXT INDEX ft_questions_search (title, body, focus_name, category, target_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
