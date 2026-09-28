@@ -9,10 +9,10 @@ if (!app_installed()) {
 }
 
 $user = current_user();
-$q = trim((string)($_GET['q'] ?? ''));
-$focus = trim((string)($_GET['focus'] ?? ''));
-$category = trim((string)($_GET['category'] ?? ''));
-$tab = (string)($_GET['tab'] ?? 'hot');
+$q = trim((string)Request::get('q', Request::STRING, ''));
+$focus = trim((string)Request::get('focus', Request::STRING, ''));
+$category = trim((string)Request::get('category', Request::STRING, ''));
+$tab = (string)Request::get('tab', Request::STRING, 'hot');
 
 $where = ['q.published = 1', "q.status <> 'archived'"];
 $params = [];
