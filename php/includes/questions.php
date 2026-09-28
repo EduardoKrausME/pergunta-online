@@ -116,6 +116,9 @@ function question_event_label(string $eventType): string {
         'marked_duplicate' => 'Marcada como duplicada',
         'deleted' => 'Pergunta excluída',
         'restored' => 'Pergunta restaurada',
+        'moderation_approved' => 'Moderação aprovada',
+        'moderation_rejected' => 'Moderação rejeitada',
+        'respondent_assigned' => 'Respondente atribuído',
         default => ucfirst(str_replace('_', ' ', $eventType)),
     };
 }
