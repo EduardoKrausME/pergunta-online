@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && !$hasAdmin) {
             }
         }
         flash('success', 'Administrador criado. Agora você já pode entrar.');
-        redirect('login.php');
+        redirect('login');
     }
 }
 

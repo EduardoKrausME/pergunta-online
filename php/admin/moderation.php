@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit_log((int)$admin['id'], $approved ? 'question.moderation_approved' : 'question.moderation_rejected', 'question', $id);
         flash('success', $approved ? 'Pergunta aprovada e publicada.' : 'Pergunta rejeitada e mantida fora do site.');
     }
-    redirect('admin/moderation.php');
+    redirect('admin/moderation');
 }
 
 $rows = db()->query("
@@ -51,7 +51,7 @@ $questions = array_map(static fn(array $row): array => [
     'target_name' => (string)$row['target_name'],
     'author_name' => (string)$row['author_name'],
     'created_at' => date('d/m/Y H:i', strtotime((string)$row['created_at'])),
-    'admin_url' => base_url('admin/question.php?id=' . (int)$row['id']),
+    'admin_url' => base_url('admin/question?id=' . (int)$row['id']),
 ], $rows);
 
 render_page('admin/moderation', [

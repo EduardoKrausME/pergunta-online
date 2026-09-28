@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 require_admin();
 
@@ -52,9 +52,9 @@ $rows = array_map(static function(array $row): array {
     $entityId = (int)($row['entity_id'] ?? 0);
     $url = '';
     if ($entityType === 'question' && $entityId > 0) {
-        $url = base_url('admin/question.php?id=' . $entityId);
+        $url = base_url('admin/question?id=' . $entityId);
     } elseif ($entityType === 'user' && $entityId > 0) {
-        $url = base_url('admin/user.php?id=' . $entityId);
+        $url = base_url('admin/user?id=' . $entityId);
     }
     return [
         'action' => (string)$row['action'],
@@ -87,6 +87,6 @@ render_page('admin/history', [
     'total_pages' => $totalPages,
     'has_prev' => $page > 1,
     'has_next' => $page < $totalPages,
-    'prev_url' => base_url('admin/history.php?' . http_build_query($prev)),
-    'next_url' => base_url('admin/history.php?' . http_build_query($next)),
+    'prev_url' => base_url('admin/history?' . http_build_query($prev)),
+    'next_url' => base_url('admin/history?' . http_build_query($next)),
 ], 'Histórico', true);

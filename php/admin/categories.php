@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit_log((int)$admin['id'], 'category.active_changed', 'category', $id, $active ? 'active' : 'inactive');
         flash('success', 'Disponibilidade da categoria atualizada.');
     }
-    redirect('admin/categories.php');
+    redirect('admin/categories');
 }
 
 $rows = db()->query("
@@ -72,5 +72,5 @@ render_page('admin/catalog', [
     'items' => $items,
     'has_items' => $items !== [],
     'is_focus' => false,
-    'form_action' => base_url('admin/categories.php'),
+    'form_action' => base_url('admin/categories'),
 ], 'Categorias', true);

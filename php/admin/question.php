@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 $id = (int)Request::get('id', Request::INT, 0);
@@ -212,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    redirect('admin/question.php?id=' . $id);
+    redirect('admin/question?id=' . $id);
 }
 
 $question = $load($id);
@@ -258,7 +258,7 @@ $evidence = array_map(static fn(array $row): array => [
     'reference' => (string)($row['reference_value'] ?? ''),
     'has_reference' => !empty($row['reference_value']),
     'has_file' => !empty($row['storage_name']),
-    'download_url' => !empty($row['storage_name']) ? base_url('evidence.php?id=' . (int)$row['id']) : '',
+    'download_url' => !empty($row['storage_name']) ? base_url('evidence?id=' . (int)$row['id']) : '',
     'original_name' => (string)($row['original_name'] ?? ''),
     'created_at' => date('d/m/Y H:i', strtotime((string)$row['created_at'])),
 ], $evidenceStmt->fetchAll());
@@ -308,7 +308,7 @@ render_page('admin/question', [
         'status_label' => status_label((string)$question['status']),
         'deleted' => !empty($question['deleted_at']),
         'duplicate' => !empty($question['duplicate_of']),
-        'public_url' => base_url('question.php?id=' . $id),
+        'public_url' => base_url('question?id=' . $id),
     ],
     'focuses' => array_map(static fn(array $row): array => ['id'=>(int)$row['id'],'label'=>(string)$row['abbr'].' · '.(string)$row['name'],'selected'=>(int)$row['id']===(int)$question['focus_id']], $focusRows),
     'categories' => array_map(static fn(array $row): array => ['id'=>(int)$row['id'],'name'=>(string)$row['name'],'selected'=>(int)$row['id']===(int)$question['category_id']], $categoryRows),
@@ -326,5 +326,5 @@ render_page('admin/question', [
     'pending_report_count' => (int)$reportStmt->fetchColumn(),
     'duplicates' => $duplicates,
     'has_duplicates' => $duplicates !== [],
-    'back_url' => base_url('admin/questions.php'),
+    'back_url' => base_url('admin/questions'),
 ], 'Administrar pergunta', true);

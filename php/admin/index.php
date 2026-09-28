@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 require_admin();
 
@@ -73,7 +73,7 @@ $waitingRows = db()->query("
 ")->fetchAll();
 
 $waiting = array_map(static fn(array $question): array => [
-    'question_url' => base_url('admin/question.php?id=' . (int)$question['id']),
+    'question_url' => base_url('admin/question?id=' . (int)$question['id']),
     'title' => (string)$question['title'],
     'focus_name' => (string)$question['focus_name'],
     'target_name' => (string)$question['target_name'],
@@ -93,7 +93,7 @@ $latestRows = db()->query("
 ")->fetchAll();
 
 $latest = array_map(static fn(array $question): array => [
-    'question_url' => base_url('admin/question.php?id=' . (int)$question['id']),
+    'question_url' => base_url('admin/question?id=' . (int)$question['id']),
     'title' => (string)$question['title'],
     'focus_name' => (string)$question['focus_name'],
     'category' => (string)$question['category'],
@@ -124,25 +124,25 @@ $attention = [
         'label' => 'Aguardando moderação',
         'value' => (int)($attentionRow['pending_moderation'] ?? 0),
         'hint' => 'perguntas ainda fora do site',
-        'url' => base_url('admin/moderation.php'),
+        'url' => base_url('admin/moderation'),
     ],
     [
         'label' => 'Denúncias pendentes',
         'value' => $pendingReports,
         'hint' => 'itens para revisar',
-        'url' => base_url('admin/reports.php?status=pending'),
+        'url' => base_url('admin/reports?status=pending'),
     ],
     [
         'label' => 'Pautas sem movimento',
         'value' => (int)($attentionRow['stale_taken'] ?? 0),
         'hint' => 'assumidas há mais de ' . $threshold . ' dias',
-        'url' => base_url('admin/questions.php?status=taken'),
+        'url' => base_url('admin/questions?status=taken'),
     ],
     [
         'label' => 'Respostas sem evidência',
         'value' => (int)($attentionRow['answered_without_evidence'] ?? 0),
         'hint' => 'ciclos fechados sem referência',
-        'url' => base_url('admin/questions.php?status=answered'),
+        'url' => base_url('admin/questions?status=answered'),
     ],
 ];
 

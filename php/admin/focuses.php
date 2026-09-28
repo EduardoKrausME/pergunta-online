@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit_log((int)$admin['id'], 'focus.active_changed', 'focus', $id, $active ? 'active' : 'inactive');
         flash('success', 'Disponibilidade do foco atualizada.');
     }
-    redirect('admin/focuses.php');
+    redirect('admin/focuses');
 }
 
 $rows = db()->query("
@@ -74,5 +74,5 @@ render_page('admin/catalog', [
     'items' => $items,
     'has_items' => $items !== [],
     'is_focus' => true,
-    'form_action' => base_url('admin/focuses.php'),
+    'form_action' => base_url('admin/focuses'),
 ], 'Focos', true);

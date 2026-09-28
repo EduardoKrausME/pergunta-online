@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     audit_log((int)$admin['id'], 'settings.updated', 'settings', null);
     flash('success', 'Configurações salvas.');
-    redirect('admin/settings.php');
+    redirect('admin/settings');
 }
 
 $settings = [];

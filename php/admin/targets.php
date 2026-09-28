@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit_log((int)$admin['id'], 'target.respondent_removed', 'target', $id, 'user:' . $userId);
         flash('success', 'Vínculo removido.');
     }
-    redirect('admin/targets.php');
+    redirect('admin/targets');
 }
 
 $respondents = db()->query("SELECT id,name,email FROM users WHERE role='respondent' AND active=1 ORDER BY name")->fetchAll();

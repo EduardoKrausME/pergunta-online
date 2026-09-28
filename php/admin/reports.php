@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Denúncia analisada.');
         }
     }
-    redirect('admin/reports.php?status=' . urlencode($status));
+    redirect('admin/reports?status=' . urlencode($status));
 }
 
 $where = $status === 'all' ? '' : 'WHERE r.status=?';
@@ -75,14 +75,14 @@ $reports = array_map(static fn(array $row): array => [
     'reporter_email' => (string)$row['reporter_email'],
     'status' => (string)$row['status'],
     'created_at' => date('d/m/Y H:i', strtotime((string)$row['created_at'])),
-    'question_url' => base_url('admin/question.php?id=' . (int)$row['question_id']),
+    'question_url' => base_url('admin/question?id=' . (int)$row['question_id']),
 ], $rows);
 
 $filters = [];
 foreach (['pending' => 'Pendentes', 'resolved' => 'Resolvidas', 'dismissed' => 'Descartadas', 'all' => 'Todas'] as $value => $label) {
     $filters[] = [
         'label' => $label,
-        'url' => base_url('admin/reports.php?status=' . $value),
+        'url' => base_url('admin/reports?status=' . $value),
         'active_class' => $status === $value ? 'active' : '',
     ];
 }

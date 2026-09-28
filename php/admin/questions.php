@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (InvalidArgumentException $e) {
         flash('error', $e->getMessage());
     }
-    redirect('admin/questions.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
+    redirect('admin/questions' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
 }
 
 $where = [];
@@ -160,8 +160,8 @@ foreach ($rows as $question) {
         'author_name' => (string)$question['author_name'],
         'votes' => (int)$question['votes'],
         'pending_reports' => (int)$question['pending_reports'],
-        'question_url' => base_url('question.php?id=' . (int)$question['id']),
-        'admin_question_url' => base_url('admin/question.php?id=' . (int)$question['id']),
+        'question_url' => base_url('question?id=' . (int)$question['id']),
+        'admin_question_url' => base_url('admin/question?id=' . (int)$question['id']),
         'answer_text' => (string)($question['answer_text'] ?? ''),
         'has_answer' => !empty($question['answer_text']),
         'published' => (bool)$question['published'],
@@ -219,6 +219,6 @@ render_page('admin/questions', [
     'total_pages' => $totalPages,
     'has_prev' => $page > 1,
     'has_next' => $page < $totalPages,
-    'prev_url' => base_url('admin/questions.php?' . http_build_query($prevQuery)),
-    'next_url' => base_url('admin/questions.php?' . http_build_query($nextQuery)),
+    'prev_url' => base_url('admin/questions?' . http_build_query($prevQuery)),
+    'next_url' => base_url('admin/questions?' . http_build_query($nextQuery)),
 ], 'Perguntas', true);

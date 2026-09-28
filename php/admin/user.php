@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 $id = (int)Request::get('id', Request::INT, 0);
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             audit_log((int)$admin['id'], 'user.password_reset', 'user', $id);
             flash('success', 'Senha redefinida.');
         }
-        redirect('admin/user.php?id=' . $id);
+        redirect('admin/user?id=' . $id);
     }
 }
 
@@ -58,7 +58,7 @@ $questions = array_map(static fn(array $q): array => [
     'status' => status_label((string)$q['status']),
     'visibility' => (int)$q['published'] === 1 ? 'Pública' : 'Oculta',
     'created_at' => date('d/m/Y H:i', strtotime((string)$q['created_at'])),
-    'url' => base_url('admin/question.php?id=' . (int)$q['id']),
+    'url' => base_url('admin/question?id=' . (int)$q['id']),
 ], $questionsStmt->fetchAll());
 
 $targetsStmt = db()->prepare("
@@ -111,5 +111,5 @@ render_page('admin/user', [
     'has_targets' => $targets !== [],
     'audit' => $audit,
     'has_audit' => $audit !== [],
-    'back_url' => base_url('admin/users.php'),
+    'back_url' => base_url('admin/users'),
 ], 'Usuário', true);

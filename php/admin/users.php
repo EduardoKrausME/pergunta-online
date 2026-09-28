@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/layout.php';
 if (!app_installed()) {
-    redirect('install.php');
+    redirect('install');
 }
 $admin = require_admin();
 
@@ -53,13 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('error', $e->getCode() === '23000' ? 'Já existe uma conta com esse e-mail.' : 'Não foi possível criar o usuário.');
             }
         }
-        redirect('admin/users.php');
+        redirect('admin/users');
     }
 
     $id = (int)Request::post('user_id', Request::INT, 0);
     if ($id === (int)$admin['id']) {
         flash('warning', 'Você não pode remover o próprio acesso administrativo nesta tela.');
-        redirect('admin/users.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
+        redirect('admin/users' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
     }
 
     $stmt = db()->prepare('SELECT id,role,active FROM users WHERE id=?');
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Perfil do usuário atualizado.');
         }
     }
-    redirect('admin/users.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
+    redirect('admin/users' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
 }
 
 $where = [];
@@ -154,7 +154,7 @@ $users = array_map(static function(array $user) use ($admin): array {
         'set_respondent' => $role !== 'respondent',
         'set_user' => $role !== 'user',
         'activate' => !$isActive,
-        'detail_url' => base_url('admin/user.php?id=' . (int)$user['id']),
+        'detail_url' => base_url('admin/user?id=' . (int)$user['id']),
     ];
 }, $rows);
 
@@ -187,8 +187,8 @@ render_page('admin/users', [
     'has_filters' => $q !== '' || $roleFilter !== '' || $stateFilter !== '',
     'has_prev' => $page > 1,
     'has_next' => $page < $totalPages,
-    'prev_url' => base_url('admin/users.php?' . http_build_query($prevQuery)),
-    'next_url' => base_url('admin/users.php?' . http_build_query($nextQuery)),
+    'prev_url' => base_url('admin/users?' . http_build_query($prevQuery)),
+    'next_url' => base_url('admin/users?' . http_build_query($nextQuery)),
     'page' => $page,
     'total_pages' => $totalPages,
 ], 'Usuários', true);
