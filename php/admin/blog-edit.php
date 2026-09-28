@@ -76,6 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = ['message' => $e->getMessage()];
     }
 
+    $status = !$form['published']
+        ? 'draft'
+        : ($publishedAt !== null && strtotime($publishedAt) > time() ? 'scheduled' : 'published');
+
     $slugSource = $form['slug'] !== '' ? $form['slug'] : $form['title'];
     $slug = blog_unique_slug(db(), $slugSource, $id);
     $form['slug'] = $slug;
@@ -100,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($id > 0) {
                 $stmt = db()->prepare(
                     'UPDATE blog_posts
-                        SET title=?,slug=?,excerpt=?,content=?,cover_image_url=?,published=?,published_at=?
+                        SET title=?,slug=?,excerpt=?,content=?,cover_image_url=?,published=?,status=?,published_at=?
                       WHERE id=?'
                 );
                 $stmt->execute([
@@ -110,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $form['content'],
                     $newCover !== '' ? $newCover : null,
                     $form['published'] ? 1 : 0,
+                    $status,
                     $publishedAt,
                     $id,
                 ]);
@@ -117,8 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $stmt = db()->prepare(
                     'INSERT INTO blog_posts
-                        (author_user_id,title,slug,excerpt,content,cover_image_url,published,published_at)
-                     VALUES (?,?,?,?,?,?,?,?)'
+                        (author_user_id,title,slug,excerpt,content,cover_image_url,published,status,published_at)
+                     VALUES (?,?,?,?,?,?,?,?,?)'
                 );
                 $stmt->execute([
                     (int)$admin['id'],
@@ -128,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $form['content'],
                     $newCover !== '' ? $newCover : null,
                     $form['published'] ? 1 : 0,
+                    $status,
                     $publishedAt,
                 ]);
                 $id = (int)db()->lastInsertId();
