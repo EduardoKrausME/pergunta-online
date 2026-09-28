@@ -45,17 +45,28 @@ Depois acesse `install.php`. O instalador cria as tabelas e pede o primeiro admi
 ## Funcionalidades
 
 - home pública com busca, focos, assuntos e estados da pergunta;
-- cadastro público de usuários;
-- login com `password_hash()`/`password_verify()`, sessão regenerada e limitação básica de tentativas;
-- criação de perguntas por usuários autenticados;
+- cadastro público configurável e criação manual de usuários pelo administrador;
+- login com `password_hash()`/`password_verify()`, sessão regenerada, último acesso e limitação básica de tentativas;
+- criação de perguntas usando focos, categorias e destinatários administrados, evitando variações de texto;
+- moderação opcional antes da publicação;
 - endosso “Boa!” e perguntas salvas, persistidos no MySQL;
-- cronômetro de silêncio a partir de `waiting_since`;
-- página individual da pergunta;
-- administração com indicadores;
-- gestão de usuários: ativo/inativo e user/admin;
-- gestão de perguntas: aberta, aguardando resposta, pauta assumida, respondida ou arquivada;
-- registro da resposta na própria pergunta;
-- CSRF em todas as ações POST e consultas preparadas via PDO.
+- cronômetro de silêncio com períodos reiniciados corretamente quando a pergunta volta a aguardar resposta;
+- papel `respondent` vinculado a destinatários específicos, além de `user` e `admin`;
+- fluxo para respondente assumir a pauta e registrar a resposta oficial;
+- linha do tempo imutável da pergunta e auditoria global das ações administrativas;
+- evidências por URL, texto, documento, imagem ou vídeo, com arquivos servidos por rota autorizada;
+- denúncias comunitárias com fila de análise;
+- identificação de perguntas duplicadas sem quebrar a URL antiga;
+- exclusão lógica e restauração de perguntas;
+- administração de focos, categorias, destinatários e contas respondentes;
+- administração detalhada de usuários com perguntas, endossos, salvos e redefinição de senha;
+- administração detalhada de perguntas com conteúdo, estado, publicação, resposta, evidências, engajamento e histórico;
+- busca administrativa com FULLTEXT, paginação e navegação da lixeira;
+- dashboard operacional com moderação pendente, denúncias, pautas paradas e respostas sem evidência;
+- configurações persistidas para cadastro, publicação automática, prazo de silêncio, paginação e nome do site;
+- CSRF em ações POST, consultas preparadas via PDO e escaping padrão nos templates Mustache;
+- migrações incrementais para atualizar instalações existentes;
+- GitHub Actions com lint de PHP e smoke test do schema/bootstrap contra MySQL.
 
 ## Segurança e produção
 
