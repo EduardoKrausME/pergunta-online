@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/request.php';
+require_once __DIR__ . '/migrations.php';
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
@@ -59,6 +60,7 @@ function db(): PDO {
             PDO::ATTR_EMULATE_PREPARES => false,
         ]
     );
+    run_schema_migrations($pdo);
 
     return $pdo;
 }
@@ -135,7 +137,7 @@ function current_user(): ?array {
         return null;
     }
 
-    $stmt = db()->prepare('SELECT id,name,email,role,active,created_at FROM users WHERE id=? LIMIT 1');
+    $stmt = db()->prepare('SELECT id,name,email,role,active,created_at,last_login_at FROM users WHERE id=? LIMIT 1');
     $stmt->execute([$id]);
     $row = $stmt->fetch();
 
@@ -186,4 +188,24 @@ function status_label(string $status): string {
 
 function status_class(string $status): string {
     return in_array($status, ['waiting', 'answered', 'taken'], true) ? $status : '';
+}
+
+function app_setting(string $key, string $default = ''): string {
+    static $cache = [];
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+    if (!app_installed()) {
+        return $default;
+    }
+    $stmt = db()->prepare('SELECT setting_value FROM app_settings WHERE setting_key=? LIMIT 1');
+    $stmt->execute([$key]);
+    $value = $stmt->fetchColumn();
+    $cache[$key] = $value === false ? $default : (string)$value;
+    return $cache[$key];
+}
+
+function audit_log(?int $adminUserId, string $action, string $entityType, ?int $entityId = null, ?string $details = null): void {
+    $stmt = db()->prepare('INSERT INTO admin_audit_log (admin_user_id,action,entity_type,entity_id,details) VALUES (?,?,?,?,?)');
+    $stmt->execute([$adminUserId, $action, $entityType, $entityId, $details]);
 }
