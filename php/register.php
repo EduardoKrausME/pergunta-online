@@ -8,7 +8,7 @@ if (!app_installed()) {
     redirect('install.php');
 }
 if (current_user()) {
-    redirect('index.php');
+    redirect('/');
 }
 if (app_setting('registration_enabled', '1') !== '1') {
     flash('warning', 'O cadastro público está desativado.');
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             $_SESSION['user_id'] = (int)db()->lastInsertId();
             flash('success', 'Conta criada. Bem-vindo ao Pergunta.Online.');
-            redirect('index.php');
+            redirect('/');
         } catch (PDOException $e) {
             $error = $e->getCode() === '23000' ? 'Já existe uma conta com este e-mail.' : 'Não foi possível criar a conta.';
         }
