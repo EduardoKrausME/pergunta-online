@@ -11,8 +11,10 @@ $admin = require_admin();
 $q = trim((string)Request::get('q', Request::STRING, ''));
 $roleFilter = (string)Request::get('role', Request::STRING, '');
 $stateFilter = (string)Request::get('state', Request::STRING, '');
+$page = max(1, (int)Request::get('page', Request::INT, 1));
+$perPage = 50;
 
-if (!in_array($roleFilter, ['', 'user', 'admin'], true)) {
+if (!in_array($roleFilter, ['', 'user', 'respondent', 'admin'], true)) {
     $roleFilter = '';
 }
 if (!in_array($stateFilter, ['', 'active', 'inactive'], true)) {
@@ -23,15 +25,40 @@ $returnQuery = http_build_query(array_filter([
     'q' => $q,
     'role' => $roleFilter,
     'state' => $stateFilter,
+    'page' => $page > 1 ? (string)$page : '',
 ], static fn(string $value): bool => $value !== ''));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $id = (int)Request::post('user_id', Request::INT, 0);
     $action = (string)Request::post('action', Request::STRING, '');
 
+    if ($action === 'create') {
+        $name = trim((string)Request::post('name', Request::STRING, ''));
+        $email = normalize_email((string)Request::post('email', Request::STRING, ''));
+        $password = (string)Request::post('password', Request::STRING, '');
+        $role = (string)Request::post('role', Request::STRING, 'user');
+        if (!in_array($role, ['user', 'respondent', 'admin'], true)) {
+            $role = 'user';
+        }
+        if (strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 10) {
+            flash('error', 'Informe nome, e-mail válido e senha com pelo menos 10 caracteres.');
+        } else {
+            try {
+                $stmt = db()->prepare('INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)');
+                $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
+                $newId = (int)db()->lastInsertId();
+                audit_log((int)$admin['id'], 'user.created', 'user', $newId, $role);
+                flash('success', 'Usuário criado.');
+            } catch (PDOException $e) {
+                flash('error', $e->getCode() === '23000' ? 'Já existe uma conta com esse e-mail.' : 'Não foi possível criar o usuário.');
+            }
+        }
+        redirect('admin/users.php');
+    }
+
+    $id = (int)Request::post('user_id', Request::INT, 0);
     if ($id === (int)$admin['id']) {
-        flash('warning', 'Você não pode desativar ou remover seu próprio acesso administrativo aqui.');
+        flash('warning', 'Você não pode remover o próprio acesso administrativo nesta tela.');
         redirect('admin/users.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
     }
 
@@ -39,15 +66,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$id]);
     $target = $stmt->fetch();
 
-    if ($target) {
-        if ($action === 'toggle_active') {
-            $s = db()->prepare('UPDATE users SET active=? WHERE id=?');
-            $s->execute([(int)!((int)$target['active']), $id]);
-            flash('success', 'Status do usuário atualizado.');
-        } elseif ($action === 'toggle_role') {
-            $role = $target['role'] === 'admin' ? 'user' : 'admin';
+    if ($target && $action === 'set_active') {
+        $active = (bool)Request::post('active', Request::BOOL, false);
+        $s = db()->prepare('UPDATE users SET active=? WHERE id=?');
+        $s->execute([$active ? 1 : 0, $id]);
+        audit_log((int)$admin['id'], 'user.active_changed', 'user', $id, $active ? 'active' : 'inactive');
+        flash('success', $active ? 'Usuário ativado.' : 'Usuário desativado.');
+    } elseif ($target && $action === 'set_role') {
+        $role = (string)Request::post('role', Request::STRING, '');
+        if (in_array($role, ['user', 'respondent', 'admin'], true)) {
             $s = db()->prepare('UPDATE users SET role=? WHERE id=?');
             $s->execute([$role, $id]);
+            audit_log((int)$admin['id'], 'user.role_changed', 'user', $id, (string)$target['role'] . ' -> ' . $role);
             flash('success', 'Perfil do usuário atualizado.');
         }
     }
@@ -56,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $where = [];
 $params = [];
-
 if ($q !== '') {
     $where[] = '(name LIKE ? OR email LIKE ?)';
     $term = '%' . $q . '%';
@@ -72,70 +101,94 @@ if ($stateFilter === 'active') {
     $where[] = 'active = 0';
 }
 
-$sql = 'SELECT id,name,email,role,active,created_at,updated_at FROM users';
-if ($where !== []) {
-    $sql .= ' WHERE ' . implode(' AND ', $where);
-}
-$sql .= ' ORDER BY created_at DESC LIMIT 200';
+$whereSql = $where !== [] ? ' WHERE ' . implode(' AND ', $where) : '';
+$countStmt = db()->prepare('SELECT COUNT(*) FROM users' . $whereSql);
+$countStmt->execute($params);
+$totalFiltered = (int)$countStmt->fetchColumn();
+$totalPages = max(1, (int)ceil($totalFiltered / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
 
+$sql = 'SELECT id,name,email,role,active,last_login_at,created_at,updated_at FROM users' . $whereSql .
+    ' ORDER BY created_at DESC LIMIT ' . $perPage . ' OFFSET ' . $offset;
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 $statsRow = db()->query("
-    SELECT
-        COUNT(*) AS total,
-        SUM(active = 1) AS active_count,
-        SUM(active = 0) AS inactive_count,
-        SUM(role = 'admin') AS admin_count
+    SELECT COUNT(*) total,
+           SUM(active=1) active_count,
+           SUM(active=0) inactive_count,
+           SUM(role='admin') admin_count,
+           SUM(role='respondent') respondent_count
     FROM users
 ")->fetch();
 
 $summary = [
     ['label' => 'Usuários', 'value' => (int)$statsRow['total']],
     ['label' => 'Ativos', 'value' => (int)$statsRow['active_count']],
-    ['label' => 'Desativados', 'value' => (int)$statsRow['inactive_count']],
+    ['label' => 'Respondentes', 'value' => (int)$statsRow['respondent_count']],
     ['label' => 'Administradores', 'value' => (int)$statsRow['admin_count']],
 ];
 
 $users = array_map(static function(array $user) use ($admin): array {
     $isActive = (int)$user['active'] === 1;
-    $isAdmin = $user['role'] === 'admin';
-
+    $role = (string)$user['role'];
     return [
         'id' => (int)$user['id'],
         'name' => (string)$user['name'],
         'email' => (string)$user['email'],
-        'role_label' => $isAdmin ? 'Administrador' : 'Usuário',
-        'role_class' => $isAdmin ? 'admin' : 'user',
+        'role_label' => match ($role) {
+            'admin' => 'Administrador',
+            'respondent' => 'Respondente',
+            default => 'Usuário',
+        },
+        'role_class' => $role,
         'status' => $isActive ? 'Ativo' : 'Desativado',
         'status_class' => $isActive ? 'active' : 'inactive',
         'created_at' => date('d/m/Y', strtotime((string)$user['created_at'])),
         'updated_at' => date('d/m/Y H:i', strtotime((string)$user['updated_at'])),
+        'last_login_at' => !empty($user['last_login_at']) ? date('d/m/Y H:i', strtotime((string)$user['last_login_at'])) : 'Nunca',
         'can_manage' => (int)$user['id'] !== (int)$admin['id'],
-        'role_action_label' => $isAdmin ? 'Tornar usuário' : 'Tornar admin',
-        'active_action_label' => $isActive ? 'Desativar' : 'Ativar',
+        'set_admin' => $role !== 'admin',
+        'set_respondent' => $role !== 'respondent',
+        'set_user' => $role !== 'user',
+        'activate' => !$isActive,
+        'detail_url' => base_url('admin/user.php?id=' . (int)$user['id']),
     ];
 }, $rows);
 
 $roleFilters = [
     ['value' => '', 'label' => 'Todos os perfis', 'selected' => $roleFilter === ''],
     ['value' => 'user', 'label' => 'Usuários', 'selected' => $roleFilter === 'user'],
+    ['value' => 'respondent', 'label' => 'Respondentes', 'selected' => $roleFilter === 'respondent'],
     ['value' => 'admin', 'label' => 'Administradores', 'selected' => $roleFilter === 'admin'],
 ];
-
 $stateFilters = [
     ['value' => '', 'label' => 'Todos os status', 'selected' => $stateFilter === ''],
     ['value' => 'active', 'label' => 'Ativos', 'selected' => $stateFilter === 'active'],
     ['value' => 'inactive', 'label' => 'Desativados', 'selected' => $stateFilter === 'inactive'],
 ];
 
+$queryBase = ['q' => $q, 'role' => $roleFilter, 'state' => $stateFilter];
+$prevQuery = $queryBase;
+$prevQuery['page'] = max(1, $page - 1);
+$nextQuery = $queryBase;
+$nextQuery['page'] = min($totalPages, $page + 1);
+
 render_page('admin/users', [
     'users' => $users,
     'summary' => $summary,
     'result_count' => count($users),
+    'total_filtered' => $totalFiltered,
     'search_query' => $q,
     'role_filters' => $roleFilters,
     'state_filters' => $stateFilters,
     'has_filters' => $q !== '' || $roleFilter !== '' || $stateFilter !== '',
+    'has_prev' => $page > 1,
+    'has_next' => $page < $totalPages,
+    'prev_url' => base_url('admin/users.php?' . http_build_query($prevQuery)),
+    'next_url' => base_url('admin/users.php?' . http_build_query($nextQuery)),
+    'page' => $page,
+    'total_pages' => $totalPages,
 ], 'Usuários', true);
