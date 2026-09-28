@@ -58,7 +58,7 @@ $evidence = array_map(static fn(array $row): array => [
     'created_at' => date('d/m/Y', strtotime((string)$row['created_at'])),
 ], $evidenceStmt->fetchAll());
 
-$publicEvents = ['created','status_changed','answer_updated','published','edited','evidence_added','marked_duplicate','respondent_assigned'];
+$publicEvents = ['created','status_changed','answer_updated','published','moderation_approved','edited','evidence_added','marked_duplicate','duplicate_removed','respondent_assigned','respondent_unassigned'];
 $placeholders = implode(',', array_fill(0, count($publicEvents), '?'));
 $historyStmt = db()->prepare("
     SELECT h.*,u.name actor_name
