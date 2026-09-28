@@ -509,17 +509,17 @@ function api_blog_prepare(array $input, array $actor): array {
     $updateExisting = api_bool($input['update_existing'] ?? null, false);
     $dryRun = api_bool($input['dry_run'] ?? null, false);
 
-    $willWrite = !$dryRun && (!$existing || $updateExisting);
-    $download = null;
-    if (!$image['remove'] && $image['url'] !== '' && (!$existing || $updateExisting)) {
-        $download = api_blog_download_image($image['url'], $willWrite);
-    }
-
     if ($existing && !$slugProvided) {
         $slug = (string)$existing['slug'];
     } else {
         $slugSource = $requestedSlug !== '' ? $requestedSlug : $title;
         $slug = blog_unique_slug(db(), $slugSource, $existing ? (int)$existing['id'] : 0);
+    }
+
+    $willWrite = !$dryRun && (!$existing || $updateExisting);
+    $download = null;
+    if (!$image['remove'] && $image['url'] !== '' && (!$existing || $updateExisting)) {
+        $download = api_blog_download_image($image['url'], $willWrite);
     }
 
     return [
