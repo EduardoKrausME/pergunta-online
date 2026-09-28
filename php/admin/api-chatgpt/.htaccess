@@ -1,0 +1,7 @@
+Options -MultiViews
+
+<IfModule mod_rewrite.c>
+    # API endpoints may be called with their real .php filenames.
+    # Rewrites are intentionally disabled in this directory.
+    RewriteEngine Off
+</IfModule>
