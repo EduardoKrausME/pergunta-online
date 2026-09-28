@@ -61,6 +61,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (int)$category['id'], (string)$category['name'],
                 (int)$target['id'], (string)$target['name'], $title, $body, $id
             ]);
+
+            if ((int)($question['target_id'] ?? 0) !== (int)$target['id'] && !empty($question['taken_by'])) {
+                $validOwner = db()->prepare('SELECT 1 FROM target_users WHERE target_id=? AND user_id=?');
+                $validOwner->execute([(int)$target['id'], (int)$question['taken_by']]);
+                if (!$validOwner->fetchColumn()) {
+                    $clearOwner = db()->prepare('UPDATE questions SET taken_by=NULL,taken_at=NULL WHERE id=?');
+                    $clearOwner->execute([$id]);
+                    question_history_add($id, (int)$admin['id'], 'respondent_unassigned', (string)$question['status'], (string)$question['status'], 'Destinatário alterado.');
+                    audit_log((int)$admin['id'], 'question.respondent_unassigned', 'question', $id, 'Destinatário alterado.');
+                }
+            }
+
             question_history_add($id, (int)$admin['id'], 'edited', (string)$question['status'], (string)$question['status']);
             audit_log((int)$admin['id'], 'question.edited', 'question', $id);
             flash('success', 'Conteúdo da pergunta atualizado.');
@@ -106,6 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             flash('error', 'Pergunta principal inválida.');
         }
+    } elseif ($action === 'unmark_duplicate') {
+        $newStatus = (string)$question['status'] === 'archived' ? 'open' : (string)$question['status'];
+        $stmt = db()->prepare('UPDATE questions SET duplicate_of=NULL,status=? WHERE id=?');
+        $stmt->execute([$newStatus, $id]);
+        question_history_add($id, (int)$admin['id'], 'duplicate_removed', (string)$question['status'], $newStatus);
+        audit_log((int)$admin['id'], 'question.duplicate_removed', 'question', $id);
+        flash('success', 'Marca de duplicidade removida.');
     } elseif ($action === 'delete') {
         $stmt = db()->prepare('UPDATE questions SET deleted_at=NOW(),deleted_by=?,published=0 WHERE id=?');
         $stmt->execute([(int)$admin['id'], $id]);
