@@ -1,0 +1,42 @@
+{{>partials/site_header}}
+
+<section class="admin-head admin-head-split">
+    <div>
+        <div class="eyebrow">DENÚNCIAS</div>
+        <h1>Moderação comunitária</h1>
+        <p class="muted">{{count}} denúncia(s) no filtro atual.</p>
+    </div>
+</section>
+
+<div class="tabs admin-tabs">
+{{#filters}}<a class="tab {{active_class}}" href="{{url}}">{{label}}</a>{{/filters}}
+</div>
+
+<div class="admin-question-list admin-recent-panel">
+{{#reports}}
+<section class="panel">
+    <div class="admin-badge-row"><span class="admin-badge">{{reason}}</span><span class="admin-badge">{{status}}</span></div>
+    <h2><a href="{{question_url}}">#{{question_id}} · {{question_title}}</a></h2>
+    <p>{{details}}</p>
+    <div class="admin-question-meta">Denunciada por {{reporter_name}} · {{reporter_email}} · {{created_at}}</div>
+    <div class="admin-card-actions">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="report_id" value="{{id}}">
+            <input type="hidden" name="action" value="dismissed">
+            <button class="button ghost small" type="submit">Descartar denúncia</button>
+        </form>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="report_id" value="{{id}}">
+            <input type="hidden" name="action" value="resolved">
+            <button class="button primary small" type="submit">Marcar resolvida</button>
+        </form>
+    </div>
+</section>
+{{/reports}}
+</div>
+
+{{^has_reports}}<div class="empty">Nenhuma denúncia neste filtro.</div>{{/has_reports}}
+
+{{>partials/site_footer}}
