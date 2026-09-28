@@ -22,6 +22,24 @@
 {{/stats}}
 </div>
 
+<section class="panel admin-attention-panel">
+    <div class="panel-head compact">
+        <div>
+            <div class="eyebrow">PRECISA DE AÇÃO</div>
+            <h2>O que não deveria ficar parado</h2>
+        </div>
+    </div>
+    <div class="admin-attention-grid">
+    {{#attention}}
+        <a href="{{url}}" class="admin-attention-card">
+            <strong>{{value}}</strong>
+            <span>{{label}}</span>
+            <small>{{hint}}</small>
+        </a>
+    {{/attention}}
+    </div>
+</section>
+
 <div class="admin-dashboard-grid">
     <section class="panel admin-overview-panel">
         <div class="panel-head compact">
