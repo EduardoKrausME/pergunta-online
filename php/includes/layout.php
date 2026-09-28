@@ -19,6 +19,19 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
     $isAdmin = ($user['role'] ?? '') === 'admin';
     $isRespondent = ($user['role'] ?? '') === 'respondent';
     $siteName = $installed ? app_setting('site_name', APP_NAME) : APP_NAME;
+    $adminScript = $admin ? basename((string)($_SERVER['SCRIPT_NAME'] ?? '')) : '';
+    $adminSection = match ($adminScript) {
+        'questions.php', 'question.php' => 'questions',
+        'users.php', 'user.php' => 'users',
+        'focuses.php' => 'focuses',
+        'categories.php' => 'categories',
+        'targets.php' => 'targets',
+        'moderation.php' => 'moderation',
+        'reports.php' => 'reports',
+        'history.php' => 'history',
+        'settings.php' => 'settings',
+        default => 'summary',
+    };
     $flashes = array_map(static fn(array $flash): array => [
         'type' => (string)($flash['type'] ?? 'info'),
         'message' => (string)($flash['message'] ?? ''),
@@ -52,6 +65,16 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'user_is_respondent' => $isRespondent,
         'user_name' => (string)($user['name'] ?? ''),
         'show_admin_bar' => $admin,
+        'admin_nav_summary' => $admin && $adminSection === 'summary',
+        'admin_nav_questions' => $admin && $adminSection === 'questions',
+        'admin_nav_users' => $admin && $adminSection === 'users',
+        'admin_nav_focuses' => $admin && $adminSection === 'focuses',
+        'admin_nav_categories' => $admin && $adminSection === 'categories',
+        'admin_nav_targets' => $admin && $adminSection === 'targets',
+        'admin_nav_moderation' => $admin && $adminSection === 'moderation',
+        'admin_nav_reports' => $admin && $adminSection === 'reports',
+        'admin_nav_history' => $admin && $adminSection === 'history',
+        'admin_nav_settings' => $admin && $adminSection === 'settings',
         'flashes' => $flashes,
         'csrf_token' => csrf_token(),
         'year' => date('Y'),
