@@ -29,6 +29,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'moderation.php' => 'moderation',
         'reports.php' => 'reports',
         'history.php' => 'history',
+        'blog.php', 'blog-edit.php' => 'blog',
         'settings.php' => 'settings',
         default => 'summary',
     };
@@ -42,6 +43,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'moderation' => 0,
         'reports' => 0,
         'history' => 0,
+        'blog' => 0,
     ];
     if ($admin && $installed) {
         $adminCountsRow = db()->query("
@@ -57,7 +59,8 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
                     WHERE moderation_status = 'pending' AND deleted_at IS NULL
                 ) AS moderation,
                 (SELECT COUNT(*) FROM question_reports WHERE status = 'pending') AS reports,
-                (SELECT COUNT(*) FROM admin_audit_log) AS history
+                (SELECT COUNT(*) FROM admin_audit_log) AS history,
+                (SELECT COUNT(*) FROM blog_posts) AS blog
         ")->fetch();
 
         if (is_array($adminCountsRow)) {
@@ -94,6 +97,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'admin_moderation_url' => base_url('admin/moderation'),
         'admin_reports_url' => base_url('admin/reports'),
         'admin_history_url' => base_url('admin/history'),
+        'admin_blog_url' => base_url('admin/blog'),
         'admin_settings_url' => base_url('admin/settings'),
         'logged_in' => $user !== null,
         'logged_out' => $user === null,
@@ -110,6 +114,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'admin_nav_moderation' => $admin && $adminSection === 'moderation',
         'admin_nav_reports' => $admin && $adminSection === 'reports',
         'admin_nav_history' => $admin && $adminSection === 'history',
+        'admin_nav_blog' => $admin && $adminSection === 'blog',
         'admin_nav_settings' => $admin && $adminSection === 'settings',
         'admin_count_questions' => $adminCounts['questions'],
         'admin_count_users' => $adminCounts['users'],
@@ -119,6 +124,7 @@ function template_base_context(string $title = APP_NAME, bool $admin = false): a
         'admin_count_moderation' => $adminCounts['moderation'],
         'admin_count_reports' => $adminCounts['reports'],
         'admin_count_history' => $adminCounts['history'],
+        'admin_count_blog' => $adminCounts['blog'],
         'flashes' => $flashes,
         'csrf_token' => csrf_token(),
         'year' => date('Y'),

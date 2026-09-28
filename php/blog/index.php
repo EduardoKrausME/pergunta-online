@@ -86,7 +86,7 @@ if ($slug !== '') {
         'published_date' => blog_format_date($published),
         'author_name' => trim((string)($post['author_name'] ?? '')),
         'has_author' => trim((string)($post['author_name'] ?? '')) !== '',
-        'cover_image_url' => trim((string)($post['cover_image_url'] ?? '')),
+        'cover_image_url' => blog_cover_url((string)($post['cover_image_url'] ?? '')),
         'has_cover' => trim((string)($post['cover_image_url'] ?? '')) !== '',
     ], (string)$post['title']);
     exit;
@@ -114,7 +114,7 @@ $stmt->execute();
 $posts = [];
 foreach ($stmt->fetchAll() as $post) {
     $published = (string)($post['published_at'] ?: $post['created_at']);
-    $cover = trim((string)($post['cover_image_url'] ?? ''));
+    $cover = blog_cover_url((string)($post['cover_image_url'] ?? ''));
     $posts[] = [
         'title' => (string)$post['title'],
         'excerpt' => blog_excerpt($post),

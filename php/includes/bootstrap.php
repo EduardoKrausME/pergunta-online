@@ -6,7 +6,7 @@ require_once __DIR__ . '/request.php';
 require_once __DIR__ . '/migrations.php';
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
@@ -212,3 +212,4 @@ function audit_log(?int $adminUserId, string $action, string $entityType, ?int $
 
 require_once __DIR__ . '/questions.php';
 require_once __DIR__ . '/evidence.php';
+require_once __DIR__ . '/blog.php';

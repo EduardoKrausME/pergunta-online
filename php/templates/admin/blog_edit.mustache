@@ -1,0 +1,94 @@
+{{>partials/site_header}}
+
+<section class="admin-head-split">
+    <div>
+        <div class="eyebrow">BLOG</div>
+        <h1>{{editor_title}}</h1>
+        <p class="muted">{{editor_description}}</p>
+    </div>
+    <div class="admin-head-actions">
+        {{#can_view}}<a class="button ghost" href="{{view_url}}" target="_blank" rel="noopener noreferrer">Ver publicado</a>{{/can_view}}
+        <a class="button ghost" href="{{list_url}}">Voltar</a>
+    </div>
+</section>
+
+{{#errors}}<div class="flash error">{{message}}</div>{{/errors}}
+
+<form class="admin-blog-editor" method="post" action="{{form_action}}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="id" value="{{id}}">
+
+    <section class="panel admin-blog-main">
+        <label>
+            <span class="admin-field-label">Título</span>
+            <input type="text" name="title" value="{{title}}" maxlength="255" required>
+        </label>
+
+        <label>
+            <span class="admin-field-label">URL do artigo</span>
+            <div class="admin-blog-slug">
+                <span>/blog/</span>
+                <input type="text" name="slug" value="{{slug}}" maxlength="190" placeholder="gerada-automaticamente-pelo-titulo">
+            </div>
+            <small>Se deixar vazio, a URL é gerada automaticamente pelo título.</small>
+        </label>
+
+        <label>
+            <span class="admin-field-label">Resumo</span>
+            <textarea name="excerpt" rows="3" placeholder="Texto curto exibido na listagem do blog.">{{excerpt}}</textarea>
+        </label>
+
+        <label>
+            <span class="admin-field-label">Conteúdo</span>
+            <textarea class="admin-blog-content-editor" name="content" rows="22" required>{{content}}</textarea>
+            <small>O conteúdo é salvo como texto e os parágrafos são preservados na publicação.</small>
+        </label>
+    </section>
+
+    <aside class="admin-blog-sidebar">
+        <section class="panel">
+            <div class="panel-head compact">
+                <div>
+                    <div class="eyebrow">PUBLICAÇÃO</div>
+                    <h2>Visibilidade</h2>
+                </div>
+            </div>
+
+            <label class="admin-setting-toggle">
+                <span><strong>Publicar artigo</strong><small>Se a data estiver no futuro, ficará agendado.</small></span>
+                <input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}>
+            </label>
+
+            <label class="admin-blog-date-field">
+                <span class="admin-field-label">Data e hora</span>
+                <input type="datetime-local" name="published_at" value="{{published_at}}">
+            </label>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head compact">
+                <div>
+                    <div class="eyebrow">CAPA</div>
+                    <h2>Imagem do artigo</h2>
+                </div>
+            </div>
+
+            {{#has_cover}}<div class="admin-blog-cover-preview"><img src="{{cover_image_url}}" alt=""></div>{{/has_cover}}
+            <label class="admin-blog-file">
+                <span class="admin-field-label">{{#has_cover}}Substituir imagem{{/has_cover}}{{^has_cover}}Enviar imagem{{/has_cover}}</span>
+                <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp,image/gif">
+                <small>JPG, PNG, WEBP ou GIF, até 8 MB.</small>
+            </label>
+            {{#has_cover}}
+            <label class="checkbox admin-blog-remove-image">
+                <input type="checkbox" name="remove_image" value="1">
+                Remover imagem atual
+            </label>
+            {{/has_cover}}
+        </section>
+
+        <button class="button primary admin-blog-save" type="submit">Salvar artigo</button>
+    </aside>
+</form>
+
+{{>partials/site_footer}}
