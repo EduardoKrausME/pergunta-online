@@ -31,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             session_regenerate_id(true);
             $_SESSION['user_id'] = (int)$user['id'];
+            $lastLogin = db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?');
+            $lastLogin->execute([(int)$user['id']]);
             redirect('index.php');
         }
         $error = 'E-mail ou senha inválidos.';
