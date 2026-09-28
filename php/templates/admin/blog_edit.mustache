@@ -40,8 +40,8 @@
 
         <label>
             <span class="admin-field-label">Conteúdo</span>
-            <textarea class="admin-blog-content-editor" name="content" rows="22" required>{{content}}</textarea>
-            <small>O conteúdo é salvo como texto e os parágrafos são preservados na publicação.</small>
+            <textarea id="blog-content-editor" class="admin-blog-content-editor" name="content" rows="22" required>{{content}}</textarea>
+            <small>Editor HTML visual. Use o botão de código para editar o HTML diretamente quando necessário.</small>
         </label>
     </section>
 
@@ -91,4 +91,27 @@
     </aside>
 </form>
 
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.tinymce) {
+        return;
+    }
+    tinymce.init({
+        selector: '#blog-content-editor',
+        license_key: 'gpl',
+        height: 640,
+        menubar: 'edit insert format table tools',
+        plugins: 'autolink link image lists table code autoresize',
+        toolbar: 'undo redo | blocks | bold italic underline strikethrough | bullist numlist | blockquote | link image table | alignleft aligncenter alignright | removeformat | code',
+        block_formats: 'Parágrafo=p; Título 2=h2; Título 3=h3; Título 4=h4; Pré-formatado=pre',
+        promotion: false,
+        branding: false,
+        convert_urls: false,
+        relative_urls: false,
+        remove_script_host: false,
+        content_style: 'body { font-family: Inter, Arial, sans-serif; font-size: 16px; line-height: 1.65; } img { max-width: 100%; height: auto; }'
+    });
+});
+</script>
 {{>partials/site_footer}}

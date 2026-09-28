@@ -79,16 +79,74 @@ if ($slug !== '') {
 
     $published = (string)($post['published_at'] ?: $post['created_at']);
     $cover = blog_cover_url((string)($post['cover_image_url'] ?? ''));
+
+    $relatedStmt = db()->prepare(
+        'SELECT id,title,slug,excerpt,content,cover_image_url,published_at,created_at
+           FROM blog_posts
+          WHERE id<>? AND published=1 AND (published_at IS NULL OR published_at<=NOW())
+       ORDER BY COALESCE(published_at,created_at) DESC,id DESC
+          LIMIT 24'
+    );
+    $relatedStmt->execute([(int)$post['id']]);
+
+    $stopWords = ['para','como','mais','menos','sobre','entre','quando','onde','porque','pela','pelo','pelos','pelas','uma','com','sem','que','por','dos','das','nas','nos','aos','de'];
+    $sourceTitle = function_exists('mb_strtolower')
+        ? mb_strtolower((string)$post['title'], 'UTF-8')
+        : strtolower((string)$post['title']);
+    $words = preg_split('/[^\p{L}\p{N}]+/u', $sourceTitle, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $keywords = array_values(array_unique(array_filter(
+        $words,
+        static fn(string $word): bool => strlen($word) >= 4 && !in_array($word, $stopWords, true)
+    )));
+
+    $relatedRows = [];
+    foreach ($relatedStmt->fetchAll() as $candidate) {
+        $text = (string)$candidate['title'] . ' ' . (string)($candidate['excerpt'] ?? '');
+        $text = function_exists('mb_strtolower') ? mb_strtolower($text, 'UTF-8') : strtolower($text);
+        $score = 0;
+        foreach ($keywords as $keyword) {
+            if (str_contains($text, $keyword)) {
+                $score++;
+            }
+        }
+        $candidate['_score'] = $score;
+        $relatedRows[] = $candidate;
+    }
+
+    usort($relatedRows, static function(array $a, array $b): int {
+        $byScore = ((int)$b['_score']) <=> ((int)$a['_score']);
+        if ($byScore !== 0) {
+            return $byScore;
+        }
+        $dateA = strtotime((string)($a['published_at'] ?: $a['created_at'])) ?: 0;
+        $dateB = strtotime((string)($b['published_at'] ?: $b['created_at'])) ?: 0;
+        return $dateB <=> $dateA;
+    });
+
+    $relatedContext = [];
+    foreach (array_slice($relatedRows, 0, 3) as $candidate) {
+        $candidateDate = (string)($candidate['published_at'] ?: $candidate['created_at']);
+        $relatedContext[] = [
+            'title' => (string)$candidate['title'],
+            'excerpt' => blog_excerpt($candidate, 150),
+            'url' => base_url('blog/' . rawurlencode((string)$candidate['slug'])),
+            'published_date' => blog_format_date($candidateDate),
+            'cover_image_url' => blog_cover_url((string)($candidate['cover_image_url'] ?? '')),
+        ];
+    }
+
     render_page('blog/post', [
         'blog_url' => base_url('blog/'),
         'title' => (string)$post['title'],
         'excerpt' => blog_excerpt($post, 320),
-        'content_html' => nl2br(h((string)$post['content'])),
+        'content_html' => blog_content_html((string)$post['content']),
         'published_date' => blog_format_date($published),
         'author_name' => trim((string)($post['author_name'] ?? '')),
         'has_author' => trim((string)($post['author_name'] ?? '')) !== '',
         'cover_image_url' => $cover,
         'has_cover' => $cover !== '',
+        'related_posts' => $relatedContext,
+        'has_related_posts' => $relatedContext !== [],
     ], (string)$post['title']);
     exit;
 }

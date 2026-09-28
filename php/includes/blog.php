@@ -164,3 +164,120 @@ function blog_datetime_database(string $value): ?string {
 
     return $date->format('Y-m-d H:i:s');
 }
+
+function blog_sanitize_html(string $html): string {
+    $html = trim($html);
+    if ($html === '') {
+        return '';
+    }
+
+    if (!class_exists('DOMDocument')) {
+        $html = strip_tags(
+            $html,
+            '<p><br><strong><b><em><i><u><s><h2><h3><h4><ul><ol><li><blockquote><a><img><figure><figcaption><table><thead><tbody><tfoot><tr><th><td><hr><pre><code><span><div>'
+        );
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/iu', '', $html) ?? $html;
+        $html = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/iu', '', $html) ?? $html;
+        $html = preg_replace('/(href|src)\s*=\s*("|\')\s*(?:javascript|data):.*?\2/iu', '$1="#"', $html) ?? $html;
+        return $html;
+    }
+
+    $allowedTags = [
+        'p','br','strong','b','em','i','u','s','h2','h3','h4','ul','ol','li',
+        'blockquote','a','img','figure','figcaption','table','thead','tbody','tfoot',
+        'tr','th','td','hr','pre','code','span','div'
+    ];
+    $attributesByTag = [
+        'a' => ['href','target','rel','title'],
+        'img' => ['src','alt','title','width','height','loading'],
+        'th' => ['colspan','rowspan'],
+        'td' => ['colspan','rowspan'],
+        'ol' => ['start'],
+    ];
+
+    $dom = new DOMDocument('1.0', 'UTF-8');
+    $old = libxml_use_internal_errors(true);
+    $loaded = $dom->loadHTML(
+        '<?xml encoding="UTF-8"><div id="blog-html-root">' . $html . '</div>',
+        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+    );
+    libxml_clear_errors();
+    libxml_use_internal_errors($old);
+
+    if (!$loaded) {
+        return '';
+    }
+
+    $root = $dom->getElementById('blog-html-root');
+    if (!$root) {
+        return '';
+    }
+
+    $sanitize = static function(DOMNode $node) use (&$sanitize, $allowedTags, $attributesByTag): void {
+        for ($child = $node->firstChild; $child !== null;) {
+            $next = $child->nextSibling;
+
+            if ($child instanceof DOMElement) {
+                $tag = strtolower($child->tagName);
+                if (!in_array($tag, $allowedTags, true)) {
+                    while ($child->firstChild) {
+                        $node->insertBefore($child->firstChild, $child);
+                    }
+                    $node->removeChild($child);
+                    $child = $next;
+                    continue;
+                }
+
+                $allowedAttributes = $attributesByTag[$tag] ?? [];
+                for ($i = $child->attributes->length - 1; $i >= 0; $i--) {
+                    $attribute = $child->attributes->item($i);
+                    if ($attribute && !in_array(strtolower($attribute->name), $allowedAttributes, true)) {
+                        $child->removeAttribute($attribute->name);
+                    }
+                }
+
+                if ($tag === 'a' && $child->hasAttribute('href')) {
+                    $href = trim($child->getAttribute('href'));
+                    if ($href !== '' && !str_starts_with($href, '#') && !preg_match('~^(https?://|mailto:)~i', $href)) {
+                        $child->removeAttribute('href');
+                    }
+                    if ($child->getAttribute('target') === '_blank') {
+                        $child->setAttribute('rel', 'noopener noreferrer');
+                    }
+                }
+
+                if ($tag === 'img') {
+                    $src = trim($child->getAttribute('src'));
+                    if ($src === '' || (!str_starts_with($src, '/') && !preg_match('~^https?://~i', $src))) {
+                        $child->removeAttribute('src');
+                    }
+                    $child->setAttribute('loading', 'lazy');
+                }
+
+                $sanitize($child);
+            }
+
+            $child = $next;
+        }
+    };
+
+    $sanitize($root);
+
+    $output = '';
+    foreach ($root->childNodes as $child) {
+        $output .= $dom->saveHTML($child);
+    }
+    return trim($output);
+}
+
+function blog_content_html(string $content): string {
+    $content = trim($content);
+    if ($content === '') {
+        return '';
+    }
+    if (!preg_match('/<\/?[a-z][\s\S]*>/i', $content)) {
+        return nl2br(h($content));
+    }
+    return blog_sanitize_html($content);
+}
+

@@ -18,4 +18,30 @@
         <a class="button ghost small" href="{{blog_url}}">Ver outras publicações</a>
     </footer>
 </article>
+
+{{#has_related_posts}}
+<section class="blog-related">
+    <div class="section-head">
+        <div>
+            <div class="eyebrow">CONTINUE LENDO</div>
+            <h2>Posts relacionados</h2>
+        </div>
+    </div>
+    <div class="blog-related-grid">
+        {{#related_posts}}
+        <article class="blog-card">
+            <a class="blog-card-cover" href="{{url}}">
+                <img src="{{cover_image_url}}" alt="" loading="lazy" onerror="this.onerror=null;this.src='{{post_fallback_image_url}}';">
+            </a>
+            <div class="blog-card-body">
+                <time>{{published_date}}</time>
+                <h2><a href="{{url}}">{{title}}</a></h2>
+                <p>{{excerpt}}</p>
+                <a class="blog-card-link" href="{{url}}">Ler artigo →</a>
+            </div>
+        </article>
+        {{/related_posts}}
+    </div>
+</section>
+{{/has_related_posts}}
 {{>partials/site_footer}}
