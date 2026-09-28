@@ -1,6 +1,6 @@
 # Pergunta.Online PHP
 
-Versão funcional em PHP + MySQL do Pergunta.Online. Não usa Vinext, React, Node ou build frontend.
+Versão funcional em PHP + MySQL do Pergunta.Online. Não usa Vinext, React, Node ou build frontend. A camada de apresentação usa templates Mustache em `templates/`, enquanto os arquivos PHP ficam responsáveis por validação, consultas e preparação do contexto.
 
 ## Requisitos
 
@@ -8,6 +8,18 @@ Versão funcional em PHP + MySQL do Pergunta.Online. Não usa Vinext, React, Nod
 - MySQL 8.0+ ou MariaDB compatível
 - extensão `pdo_mysql`
 - Apache ou Nginx apontando o document root para esta pasta, ou para uma pasta que a contenha
+
+Não é necessário Composer para renderizar os templates; o projeto inclui um renderer Mustache pequeno, suficiente para variáveis, escaping, seções, seções invertidas e partials usados pela aplicação.
+
+## Estrutura de views
+
+- `templates/partials/`: cabeçalho, rodapé e estruturas compartilhadas;
+- `templates/admin/`: telas administrativas;
+- `templates/*.mustache`: páginas públicas, autenticação, instalação e formulário de pergunta;
+- `includes/layout.php`: prepara o contexto comum e chama o renderer;
+- `includes/mustache.php`: renderer dos arquivos `.mustache`.
+
+Os valores `{{variavel}}` são escapados por padrão. HTML pré-sanitizado usa `{{{variavel}}}` somente nos poucos pontos em que é necessário preservar quebras de linha.
 
 ## Configuração
 

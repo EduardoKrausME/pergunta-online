@@ -1,0 +1,41 @@
+{{>partials/site_header}}
+<section class="admin-head">
+    <div><div class="eyebrow">USUÁRIOS</div><h1>Contas e permissões</h1><p class="muted">Ative, desative e promova usuários. Autocadastro sempre cria perfil comum.</p></div>
+</section>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
+            <tbody>
+            {{#users}}
+            <tr>
+                <td><strong>{{name}}</strong><br><span class="muted">{{email}}</span></td>
+                <td>{{role}}</td>
+                <td>{{status}}</td>
+                <td>{{created_at}}</td>
+                <td>
+                    {{#can_manage}}
+                    <div class="inline-actions">
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                            <input type="hidden" name="user_id" value="{{id}}">
+                            <input type="hidden" name="action" value="toggle_role">
+                            <button class="button ghost small" type="submit">{{role_action_label}}</button>
+                        </form>
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                            <input type="hidden" name="user_id" value="{{id}}">
+                            <input type="hidden" name="action" value="toggle_active">
+                            <button class="button ghost small" type="submit">{{active_action_label}}</button>
+                        </form>
+                    </div>
+                    {{/can_manage}}
+                    {{^can_manage}}<span class="muted">Sua conta</span>{{/can_manage}}
+                </td>
+            </tr>
+            {{/users}}
+            </tbody>
+        </table>
+    </div>
+</section>
+{{>partials/site_footer}}

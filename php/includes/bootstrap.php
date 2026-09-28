@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 const APP_NAME = 'Pergunta.Online';
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.1.0';
 
 $configfile = dirname(__DIR__) . '/config.php';
 if (!is_file($configfile)) {
@@ -94,10 +94,6 @@ function csrf_token(): string {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
     return (string)$_SESSION['csrf_token'];
-}
-
-function csrf_field(): string {
-    return '<input type="hidden" name="csrf_token" value="' . h(csrf_token()) . '">';
 }
 
 function require_csrf(): void {

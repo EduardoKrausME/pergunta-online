@@ -1,0 +1,84 @@
+{{>partials/site_header}}
+<section class="hero">
+    <div class="eyebrow">A COMUNIDADE PERGUNTA. A HISTÓRIA FICA.</div>
+    <h1>O que merece<br>uma resposta?</h1>
+    <p>Encontre uma boa pergunta, ajude a levá-la mais longe e mantenha o histórico público.</p>
+    <form class="search" method="get">
+        <input type="search" name="q" value="{{search_query}}" placeholder="Busque uma pergunta, foco ou pessoa...">
+        <button type="submit">Buscar</button>
+    </form>
+</section>
+
+{{#focuses}}
+{{#first_focus}}<div class="radar"><span class="radar-label">Focos em destaque</span>{{/first_focus}}
+<a class="chip" href="{{url}}">{{focus_abbr}} {{focus_name}}</a>
+{{#last_focus}}<a class="chip" href="{{home_url}}">Ver todos</a></div>{{/last_focus}}
+{{/focuses}}
+
+<section class="section-head">
+    <div>
+        <h2>Perguntas em movimento</h2>
+        <div class="muted">{{result_count}} resultado(s)</div>
+    </div>
+    <div class="tabs">
+        <a class="tab {{hot_active}}" href="?tab=hot">Em alta</a>
+        <a class="tab {{recent_active}}" href="?tab=recent">Recentes</a>
+        <a class="tab {{answered_active}}" href="?tab=answered">Respondidas</a>
+    </div>
+</section>
+
+<form class="filters" method="get">
+    <input type="hidden" name="q" value="{{search_query}}">
+    <select name="category" onchange="this.form.submit()">
+        <option value="">Todos os assuntos</option>
+        {{#categories}}<option value="{{name}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/categories}}
+    </select>
+    {{#has_filters}}<a class="button ghost" href="{{home_url}}">Limpar filtros</a>{{/has_filters}}
+</form>
+
+<div class="question-grid">
+{{#questions}}
+<article class="card">
+    <div class="card-top">
+        <div class="club"><span class="badge">{{focus_abbr}}</span>{{focus_name}}</div>
+        <span class="status {{status_class}}">{{status_label}}</span>
+    </div>
+    <div class="category">{{category}}</div>
+    <h3 class="question-title"><a href="{{question_url}}">{{title}}</a></h3>
+    <p class="question-copy">{{{body_html}}}</p>
+    <p class="target">Para <strong>{{target_name}}</strong> · por {{author_name}}</p>
+    {{#show_silence}}<p class="silence-inline">{{silence_days}} dias sem resposta</p>{{/show_silence}}
+    <div class="card-actions">
+        {{#logged_in}}
+        <form method="post" action="{{action_url}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="question_id" value="{{id}}">
+            <input type="hidden" name="action" value="vote">
+            <button class="action {{vote_active_class}}" type="submit">Boa! {{vote_count}}</button>
+        </form>
+        <form method="post" action="{{action_url}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="question_id" value="{{id}}">
+            <input type="hidden" name="action" value="save">
+            <button class="action save {{save_active_class}}" type="submit">{{save_label}}</button>
+        </form>
+        {{/logged_in}}
+        {{#logged_out}}
+        <a class="action" href="{{login_url}}">Boa! {{vote_count}}</a>
+        <a class="action save" href="{{login_url}}">Salvar pergunta</a>
+        {{/logged_out}}
+    </div>
+</article>
+{{/questions}}
+</div>
+{{^questions}}<div class="empty">Nenhuma pergunta encontrada com esses filtros.</div>{{/questions}}
+
+<section class="silence-block">
+    <div>
+        <div class="eyebrow">CRONÔMETRO DO SILÊNCIO</div>
+        <h2>O tempo passa. A pergunta fica.</h2>
+        <p>Quando uma tentativa de contato é registrada e a resposta não vem, o silêncio também vira histórico.</p>
+    </div>
+    <div class="silence-number">{{waiting_count}}<small>perguntas aguardando resposta</small></div>
+</section>
+{{>partials/site_footer}}

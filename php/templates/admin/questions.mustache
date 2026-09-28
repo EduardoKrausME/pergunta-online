@@ -1,0 +1,31 @@
+{{>partials/site_header}}
+<section class="admin-head">
+    <div><div class="eyebrow">PERGUNTAS</div><h1>Moderação e respostas</h1><p class="muted">Mude o estágio, registre uma resposta e controle o cronômetro do silêncio.</p></div>
+</section>
+<div class="admin-question-list">
+{{#questions}}
+<form method="post" class="panel question-admin">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="question_id" value="{{id}}">
+    <div class="panel-head">
+        <div>
+            <span class="category">{{focus_name}} · {{category}}</span>
+            <h2>{{title}}</h2>
+            <div class="muted">por {{author_name}} · {{votes}} endosso(s)</div>
+        </div>
+        <a class="button ghost small" href="{{question_url}}">Abrir</a>
+    </div>
+    <div class="form-row">
+        <label>Status
+            <select name="status">
+                {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
+            </select>
+        </label>
+        <label>Resposta<textarea name="answer_text" rows="4" placeholder="Registre aqui a resposta oficial ou o resumo documentado.">{{answer_text}}</textarea></label>
+    </div>
+    <label class="checkbox"><input type="checkbox" name="published" value="1" {{#published}}checked{{/published}}> Publicada no site</label>
+    <button class="button primary small" type="submit">Salvar alterações</button>
+</form>
+{{/questions}}
+</div>
+{{>partials/site_footer}}

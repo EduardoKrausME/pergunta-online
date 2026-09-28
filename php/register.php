@@ -1,9 +1,15 @@
 <?php
-declare(strict_types=1);
-require_once __DIR__ . '/includes/bootstrap.php';
 
-if (!app_installed()) redirect('install.php');
-if (current_user()) redirect('index.php');
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/layout.php';
+
+if (!app_installed()) {
+    redirect('install.php');
+}
+if (current_user()) {
+    redirect('index.php');
+}
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -33,4 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-?><!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Criar conta · Pergunta.Online</title><link rel="stylesheet" href="<?= h(base_url('assets/style.css')) ?>"></head><body><main class="auth-shell"><section class="auth-card"><a class="brand" href="<?= h(base_url('index.php')) ?>"><span class="brand-dot"></span>pergunta.online</a><div class="eyebrow">AUTO CADASTRO</div><h1>Crie sua conta e participe.</h1><p class="muted">O cadastro é imediato. Novos usuários entram com perfil comum; somente administradores podem conceder acesso administrativo.</p><?php if ($error): ?><div class="flash error"><?= h($error) ?></div><?php endif; ?><form method="post" class="form-grid"><?= csrf_field() ?><label>Nome<input name="name" required maxlength="120" autocomplete="name" value="<?= h($_POST['name'] ?? '') ?>"></label><label>E-mail<input type="email" name="email" required maxlength="190" autocomplete="email" value="<?= h($_POST['email'] ?? '') ?>"></label><label>Senha<input type="password" name="password" required minlength="10" autocomplete="new-password"></label><label>Repita a senha<input type="password" name="confirm_password" required minlength="10" autocomplete="new-password"></label><button class="button primary" type="submit">Criar minha conta</button></form><p class="auth-foot">Já tem conta? <a href="<?= h(base_url('login.php')) ?>">Entre aqui</a>.</p></section></main></body></html>
+
+render_page('register', [
+    'error' => $error,
+    'name' => (string)($_POST['name'] ?? ''),
+    'email' => (string)($_POST['email'] ?? ''),
+], 'Criar conta');

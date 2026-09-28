@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f3ec">
+    <title>{{page_title}}</title>
+    <link rel="stylesheet" href="{{stylesheet_url}}">
+</head>
+<body>
+<header class="site-header">
+    <div class="wrap header-inner">
+        <a class="brand" href="{{home_url}}"><span class="brand-dot"></span>pergunta.online</a>
+        <nav class="main-nav" aria-label="Navegação principal">
+            <a href="{{home_url}}">Explorar</a>
+            {{#logged_in}}
+                <a href="{{ask_url}}">Nova pergunta</a>
+                {{#user_is_admin}}<a href="{{admin_url}}">Administração</a>{{/user_is_admin}}
+                <span class="user-name">{{user_name}}</span>
+                <a class="button ghost" href="{{logout_url}}">Sair</a>
+            {{/logged_in}}
+            {{#logged_out}}
+                <a href="{{login_url}}">Entrar</a>
+                <a class="button primary small" href="{{register_url}}">Criar conta</a>
+            {{/logged_out}}
+        </nav>
+    </div>
+</header>
+{{#show_admin_bar}}
+<div class="admin-bar">
+    <div class="wrap">
+        <strong>Administração</strong>
+        <a href="{{admin_index_url}}">Resumo</a>
+        <a href="{{admin_questions_url}}">Perguntas</a>
+        <a href="{{admin_users_url}}">Usuários</a>
+        <a href="{{home_url}}">Ver site</a>
+    </div>
+</div>
+{{/show_admin_bar}}
+<main class="wrap page">
+{{#flashes}}<div class="flash {{type}}">{{message}}</div>{{/flashes}}

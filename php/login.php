@@ -1,9 +1,15 @@
 <?php
-declare(strict_types=1);
-require_once __DIR__ . '/includes/bootstrap.php';
 
-if (!app_installed()) redirect('install.php');
-if (current_user()) redirect('index.php');
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/layout.php';
+
+if (!app_installed()) {
+    redirect('install.php');
+}
+if (current_user()) {
+    redirect('index.php');
+}
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,4 +36,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'E-mail ou senha inválidos.';
     }
 }
-?><!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Pergunta.Online</title><link rel="stylesheet" href="<?= h(base_url('assets/style.css')) ?>"></head><body><main class="auth-shell"><section class="auth-card"><a class="brand" href="<?= h(base_url('index.php')) ?>"><span class="brand-dot"></span>pergunta.online</a><div class="eyebrow">ENTRAR</div><h1>Continue de onde parou.</h1><?php foreach (consume_flashes() as $flash): ?><div class="flash <?= h($flash['type']) ?>"><?= h($flash['message']) ?></div><?php endforeach; ?><?php if ($error): ?><div class="flash error"><?= h($error) ?></div><?php endif; ?><form method="post" class="form-grid"><?= csrf_field() ?><label>E-mail<input type="email" name="email" required autocomplete="email"></label><label>Senha<input type="password" name="password" required autocomplete="current-password"></label><button class="button primary" type="submit">Entrar</button></form><p class="auth-foot">Ainda não tem conta? <a href="<?= h(base_url('register.php')) ?>">Cadastre-se</a>.</p></section></main></body></html>
+
+render_page('login', ['error' => $error], 'Entrar');

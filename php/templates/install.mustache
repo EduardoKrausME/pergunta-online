@@ -1,0 +1,23 @@
+{{>partials/auth_header}}
+<div class="eyebrow">INSTALAÇÃO</div>
+<h1>Prepare o banco e o primeiro administrador.</h1>
+{{#has_error}}
+<div class="flash error">{{error}}</div>
+<p class="muted">Confira host, porta, banco, usuário e senha em php/config.php.</p>
+{{/has_error}}
+{{#already_installed}}
+<div class="flash success">A instalação já está concluída e existe pelo menos um administrador.</div>
+<a class="button primary" href="{{login_url}}">Ir para o login</a>
+{{/already_installed}}
+{{#needs_admin}}
+<p class="muted">As tabelas foram criadas. Falta apenas cadastrar o primeiro administrador.</p>
+<form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label>Nome<input name="name" required maxlength="120" autocomplete="name"></label>
+    <label>E-mail<input type="email" name="email" required maxlength="190" autocomplete="email"></label>
+    <label>Senha<input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+    <label class="checkbox"><input type="checkbox" name="seed_demo" value="1" checked> Criar também as perguntas de demonstração da home atual</label>
+    <button class="button primary" type="submit">Criar administrador</button>
+</form>
+{{/needs_admin}}
+{{>partials/auth_footer}}

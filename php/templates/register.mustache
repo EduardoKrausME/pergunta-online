@@ -1,0 +1,15 @@
+{{>partials/auth_header}}
+<div class="eyebrow">AUTO CADASTRO</div>
+<h1>Crie sua conta e participe.</h1>
+<p class="muted">O cadastro é imediato. Novos usuários entram com perfil comum; somente administradores podem conceder acesso administrativo.</p>
+{{#error}}<div class="flash error">{{error}}</div>{{/error}}
+<form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label>Nome<input name="name" required maxlength="120" autocomplete="name" value="{{name}}"></label>
+    <label>E-mail<input type="email" name="email" required maxlength="190" autocomplete="email" value="{{email}}"></label>
+    <label>Senha<input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+    <label>Repita a senha<input type="password" name="confirm_password" required minlength="10" autocomplete="new-password"></label>
+    <button class="button primary" type="submit">Criar minha conta</button>
+</form>
+<p class="auth-foot">Já tem conta? <a href="{{login_url}}">Entre aqui</a>.</p>
+{{>partials/auth_footer}}

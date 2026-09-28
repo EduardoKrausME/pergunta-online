@@ -1,0 +1,13 @@
+{{>partials/auth_header}}
+<div class="eyebrow">ENTRAR</div>
+<h1>Continue de onde parou.</h1>
+{{#flashes}}<div class="flash {{type}}">{{message}}</div>{{/flashes}}
+{{#error}}<div class="flash error">{{error}}</div>{{/error}}
+<form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label>E-mail<input type="email" name="email" required autocomplete="email"></label>
+    <label>Senha<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="button primary" type="submit">Entrar</button>
+</form>
+<p class="auth-foot">Ainda não tem conta? <a href="{{register_url}}">Cadastre-se</a>.</p>
+{{>partials/auth_footer}}

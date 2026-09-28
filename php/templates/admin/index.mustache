@@ -1,0 +1,19 @@
+{{>partials/site_header}}
+<section class="admin-head">
+    <div><div class="eyebrow">PAINEL</div><h1>Administração</h1><p class="muted">O que está acontecendo no produto agora.</p></div>
+</section>
+<div class="stats-grid">
+{{#stats}}<div class="stat-card"><strong>{{value}}</strong><span>{{label}}</span></div>{{/stats}}
+</div>
+<section class="panel">
+    <div class="panel-head"><h2>Perguntas recentes</h2><a class="button ghost" href="{{admin_questions_url}}">Gerenciar</a></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Pergunta</th><th>Autor</th><th>Status</th><th>Data</th></tr></thead>
+            <tbody>
+            {{#latest}}<tr><td><a href="{{question_url}}">{{title}}</a></td><td>{{author_name}}</td><td>{{status_label}}</td><td>{{created_at}}</td></tr>{{/latest}}
+            </tbody>
+        </table>
+    </div>
+</section>
+{{>partials/site_footer}}
