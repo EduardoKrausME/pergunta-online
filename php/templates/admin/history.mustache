@@ -1,0 +1,41 @@
+{{>partials/site_header}}
+
+<section class="admin-head">
+    <div class="eyebrow">HISTÓRICO</div>
+    <h1>Auditoria administrativa</h1>
+    <p class="muted">{{total}} evento(s) encontrados. Alterações sensíveis ficam registradas com autor e data.</p>
+</section>
+
+<form method="get" class="admin-filterbar">
+    <label class="admin-search-field"><span>Buscar</span><input type="search" name="q" value="{{search_query}}" placeholder="Ação, detalhe ou administrador"></label>
+    <label><span>Entidade</span><select name="entity">{{#filters}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/filters}}</select></label>
+    <div class="admin-filter-actions"><button class="button primary" type="submit">Filtrar</button></div>
+</form>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead><tr><th>Data</th><th>Administrador</th><th>Ação</th><th>Entidade</th><th>Detalhes</th></tr></thead>
+            <tbody>
+            {{#rows}}
+                <tr>
+                    <td>{{created_at}}</td>
+                    <td>{{admin_name}}</td>
+                    <td><strong>{{action}}</strong></td>
+                    <td>{{#has_url}}<a href="{{url}}">{{entity}} #{{entity_id}}</a>{{/has_url}}{{^has_url}}{{entity}} {{entity_id}}{{/has_url}}</td>
+                    <td>{{details}}</td>
+                </tr>
+            {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    {{^has_rows}}<div class="empty">Nenhum evento encontrado.</div>{{/has_rows}}
+</section>
+
+<div class="admin-pagination">
+    {{#has_prev}}<a class="button ghost" href="{{prev_url}}">← Anterior</a>{{/has_prev}}
+    <span>Página {{page}} de {{total_pages}}</span>
+    {{#has_next}}<a class="button ghost" href="{{next_url}}">Próxima →</a>{{/has_next}}
+</div>
+
+{{>partials/site_footer}}
