@@ -18,4 +18,10 @@ return [
 
     // Leave empty to detect the current domain and subdirectory automatically.
     'app_url' => '',
+
+    // Prefer the CHATGPT_API_TOKEN and CHATGPT_API_ACTOR_EMAIL environment variables in production.
+    'chatgpt_api' => [
+        'token' => '',
+        'actor_email' => '',
+    ],
 ];
